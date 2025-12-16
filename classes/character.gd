@@ -8,6 +8,10 @@ var sex
 var race
 # Background of the character
 var background
+# Equipment of the character
+var equipment
+# Accessories of the character
+var accessories
 
 #Initializes a new Character from json
 static func from_json(dict) -> Character:
@@ -16,6 +20,8 @@ static func from_json(dict) -> Character:
 	new.sex = dict["sex"]
 	new.race = dict["race"]
 	new.background = dict["background"]
+	new.equipment = dict["equipment"]
+	new.accessories = dict["accessories"]
 	return new
 	
 #Initializes a new Character
@@ -28,6 +34,11 @@ static func create(_name, _sex, _race, _background) -> Character:
 	new.sex = _sex
 	new.race = null if _race == null else _race["name"]
 	new.background = null if _background == null else _background["name"]
+	new.equipment = {}
+	if _background != null:
+		for slot in _background["equipment"]:
+			new.equipment[slot] = _background["equipment"][slot]
+	new.accessories = []
 	return new
 
 #Gets the name or just the race in case of lack of name

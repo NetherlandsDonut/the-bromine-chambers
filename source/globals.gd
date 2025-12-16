@@ -118,6 +118,9 @@ var character_creation_race
 var character_creation_background
 var character_creation_sex
 var area_dir_layer = "?"
+var current_slot_item : String
+var current_slot : String
+var current_accessory : int
 # Combat variables
 var combat_current
 var combat_target
@@ -308,6 +311,74 @@ func print_skill_raw(skill : String, race, background, rounded : bool = true):
 	if background != null: value += background["skills"][skill]
 	write(("+" if value >= 0 else "") + str(roundi(value)) if rounded else str(value), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
 # Prints a slot of the equipment
+func print_slot(slot : String, character : Character, rounded : bool = true):
+	write(slot + ": ")
+	globals.write_selectable(func():
+		globals.current_slot = slot
+		globals.set_scene("scene_game_equipment_b")
+	)
+	if character.equipment.has(slot):
+		globals.write(character.equipment[slot])
+		globals.set_cursor_x(33)
+		var item = get_item(character.equipment[slot])
+		if item.has("def_skill"):
+			var def = item["def_skill"]
+			write(" ")
+			write(("+" if def >= 0 else "") + str(roundi(def)) if rounded else str(def), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
+			write(" ")
+			var dices = roundi(item["def_dice_count"])
+			var sides = roundi(item["def_dice_sides"])
+			write(str(dices) + "d" + str(sides))
+		else:
+			write("       ", "Gray")
+		if item.has("att_skill"):
+			var att = item["att_skill"]
+			write(" ")
+			write(("+" if att >= 0 else "") + str(roundi(att)) if rounded else str(att), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
+			write(" ")
+			var dices = roundi(item["att_dice_count"])
+			var sides = roundi(item["att_dice_sides"])
+			write(str(dices) + "d" + str(sides))
+	else: globals.write("-")
+func print_item_for_swap(item_name : String, character : Character, rounded : bool = true):
+	globals.write_selectable(func():
+		# If the item to be equipped is an item already equipped, unequip without equipping a new one
+		if character.equipment.has(globals.current_slot) && character.equipment[globals.current_slot] == item_name:
+			globals.savegame.inventory.append(character.equipment[globals.current_slot])
+			character.equipment.erase(globals.current_slot)
+			globals.set_scene("scene_game_equipment_a", true)
+		else:
+			# If an item was already equipped in the slot, add that item to inventory so it's not lost
+			if character.equipment.has(globals.current_slot): globals.savegame.inventory.append(character.equipment.has[globals.current_slot])
+			# Removes the item you are equipping from the inventory
+			else: globals.savegame.inventory.erase(item_name)
+			# Change the item
+			character.equipment[globals.current_slot] = item_name
+			globals.set_scene("scene_game_equipment_a", true)
+	)
+	write(item_name)
+	globals.set_cursor_x(33)
+	var item = get_item(item_name)
+	if item.has("def_skill"):
+		var def = item["def_skill"]
+		write(" ")
+		write(("+" if def >= 0 else "") + str(roundi(def)) if rounded else str(def), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
+		write(" ")
+		var dices = roundi(item["def_dice_count"])
+		var sides = roundi(item["def_dice_sides"])
+		write(str(dices) + "d" + str(sides))
+	else:
+		write("       ", "Gray")
+	if item.has("att_skill"):
+		var att = item["att_skill"]
+		write(" ")
+		write(("+" if att >= 0 else "") + str(roundi(att)) if rounded else str(att), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
+		write(" ")
+		var dices = roundi(item["att_dice_count"])
+		var sides = roundi(item["att_dice_sides"])
+		write(str(dices) + "d" + str(sides))
+		write(" " + str(dices) + "-" + str(dices * (sides + int(globals.savegame.player.get_attribute("STR")))))
+# Prints a slot of the equipment
 func print_slot_raw(slot : String, race, background, rounded : bool = true):
 	write(slot + ":")
 	if background != null && background.has("equipment") && background["equipment"].has(slot):
@@ -332,7 +403,18 @@ func print_slot_raw(slot : String, race, background, rounded : bool = true):
 			write(str(dices) + "d" + str(sides))
 	else:
 		write("")
-# Prints a slot of the equipment
+# Prints an accessory slot
+func print_accessory(slot : int, character : Character, rounded : bool = true):
+	write("ACC: ")
+	globals.write_selectable(func():
+		globals.current_slot = "ACC"
+		globals.current_accessory = slot
+		globals.set_scene("scene_game_equipment_b")
+	)
+	if globals.savegame.player.accessories.size() > slot:
+		globals.write(globals.savegame.player.accessories[slot])
+	else: globals.write("-")
+# Prints an accessory slot
 func print_accessory_raw(slot : int, race, background, rounded : bool = true):
 	write("ACC: ")
 	if background != null && background.has("accessories") && background["accessories"].size() > slot:
@@ -473,7 +555,7 @@ func print_stats_raw(race, background, just_first_page : bool = true, rounded : 
 		set_cursor_xy(17, 16)
 		write("Arms")
 		modify_cursor_x(2)
-		write("D PRT  A DMG", "DimGray")
+		write("D PRT  A DMG  RANGE", "DimGray")
 		set_cursor_x(17)
 		modify_cursor_y(2)
 		print_slot_raw("MAI", race, background, rounded)

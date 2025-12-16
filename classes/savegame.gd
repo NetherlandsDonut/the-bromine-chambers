@@ -16,6 +16,8 @@ var current_area
 var game_finished
 # Current combat
 var combat
+# Player party inventory
+var inventory
 
 #Initializes a new Savegame from json
 static func from_json(dict) -> Savegame:
@@ -25,6 +27,7 @@ static func from_json(dict) -> Savegame:
 	new.player = Character.from_json(dict["player"])
 	new.current_area = dict["current_area"]
 	new.game_finished = dict["game_finished"]
+	new.inventory = dict["inventory"]
 	return new
 
 #Initializes a new Savegame
@@ -36,6 +39,7 @@ static func create(name, sex, race, background) -> Savegame:
 	new.areas_discovered = []
 	new.sites_discovered = []
 	new.game_finished = false
+	new.inventory = []
 	return new
 
 # Gives the file name for this savegame

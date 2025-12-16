@@ -36,7 +36,7 @@ static func draw_scene():
 	globals.write("Explore")
 	globals.set_cursor_xy(17, 6)
 	globals.write_selectable(func():
-		globals.set_scene("scene_game_combat_a")
+		globals.set_scene("scene_game_equipment_a")
 	)
 	globals.write("Village Tract")
 	globals.set_cursor_xy(10, 10)
