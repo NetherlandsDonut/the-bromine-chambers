@@ -27,8 +27,8 @@ static func draw_scene():
 		##)
 		#globals.write(friend.get_name(), "Gray")
 	globals.set_cursor_y(4)
-	for enemy in globals.savegame.combat.enemies:
-		globals.modify_cursor_x(1 + globals.savegame.combat.enemies.find(enemy) * 16)
+	for enemy in globals.combat.enemies:
+		globals.modify_cursor_x(1 + globals.combat.enemies.find(enemy) * 16)
 		globals.write(enemy.get_name(), "Gray")
 	globals.set_cursor_xy(0, 15)
 	globals.write("-".repeat(80))

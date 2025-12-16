@@ -1,6 +1,8 @@
 extends Node
 
 #region program_constants
+# Game directory
+var dir = "D:/Games/The Bromine Chambers" # OS.get_executable_path().get_base_dir()
 # Screen filter rectangle
 var filter : ColorRect
 # Random number generator
@@ -100,56 +102,17 @@ var palette = [
 ]
 #endregion
 
-#region game_variables
-# Game directory
-var dir = "D:/Games/The Bromine Chambers" # OS.get_executable_path().get_base_dir()
-# Game content
-#var settings = JSON.parse_string(FileAccess.open(dir + "/Data/defines.json", FileAccess.READ).get_as_text())
-var defines = JSON.parse_string(FileAccess.open(dir + "/Data/defines.json", FileAccess.READ).get_as_text())
-var events = JSON.parse_string(FileAccess.open(dir + "/Data/events.json", FileAccess.READ).get_as_text())
-var areas = JSON.parse_string(FileAccess.open(dir + "/Data/areas.json", FileAccess.READ).get_as_text())
-var races = JSON.parse_string(FileAccess.open(dir + "/Data/races.json", FileAccess.READ).get_as_text())
-var races_starting = races.filter(func(n): return n.has("starting") && n["starting"])
-var items = JSON.parse_string(FileAccess.open(dir + "/Data/items.json", FileAccess.READ).get_as_text())
-# Character creation variables
-var character_creation_name_generated_for = "?"
-var character_creation_name = "?"
-var character_creation_race
-var character_creation_background
-var character_creation_sex
-var area_dir_layer = "?"
-var current_slot_item : String
-var current_slot : String
-var current_accessory : int
-# Combat variables
-var combat_current
-var combat_target
-# Savegame
-var savegame
-var savegame_temp
-# Event
-var event
-
-func get_item(item) -> Dictionary: 
-	var temp = globals.items.filter(func(n): return n["name"] == item)
-	return {} if temp.size() == 0 else temp[0]
-func get_race(race) -> Dictionary:
-	var temp = globals.races.filter(func(n): return n["name"] == race)
-	return {} if temp.size() == 0 else temp[0]
-func get_background(race : Dictionary, background) -> Dictionary:
-	var temp = race["backgrounds"].filter(func(n): return n["name"] == background)
-	return {} if temp.size() == 0 else temp[0]
-#endregion
-
-#region program_variables
+#region program
+# Current user settings set
+var settings = JSON.parse_string(FileAccess.open(dir + "/Settings/settings.json", FileAccess.READ).get_as_text())
 # Stores all the selectable tiles
-var selectables = []
+var selectables : Array = []
 # Stores all the tiles on the screen
-var tiles = []
+var tiles : Array = []
 # Was the last written thing a selectable?
-var last_write_selectable = false
+var last_write_selectable : bool = false
 # Was the last written thing a selectable and is it active?
-var last_write_selectable_active = false
+var last_write_selectable_active : bool = false
 # Saves a file into a folder
 func save_file(data, folder, path):
 	DirAccess.make_dir_recursive_absolute(dir + "/" + folder + "/")
@@ -173,9 +136,54 @@ func list_files_in_directory(folder) -> Array:
 	return file_list
 #endregion
 
-#region user_variables
-# Current user settings set
-var settings = JSON.parse_string(FileAccess.open(dir + "/Settings/settings.json", FileAccess.READ).get_as_text())
+# These are game related things
+#region game
+# Game data
+var defines = JSON.parse_string(FileAccess.open(dir + "/Data/defines.json", FileAccess.READ).get_as_text())
+var events = JSON.parse_string(FileAccess.open(dir + "/Data/events.json", FileAccess.READ).get_as_text())
+var areas = JSON.parse_string(FileAccess.open(dir + "/Data/areas.json", FileAccess.READ).get_as_text())
+var races = JSON.parse_string(FileAccess.open(dir + "/Data/races.json", FileAccess.READ).get_as_text())
+var races_starting = races.filter(func(n): return n.has("starting") && n["starting"])
+var items = JSON.parse_string(FileAccess.open(dir + "/Data/items.json", FileAccess.READ).get_as_text())
+# Character creation variables
+var character_creation_name_generated_for : String
+var character_creation_name : String
+var character_creation_race : Dictionary
+var character_creation_background : Dictionary
+var character_creation_sex : String
+# Companion creation variables
+var companion_creation_name_generated_for : String
+var companion_creation_name : String
+var companion_creation_race : Dictionary
+var companion_creation_background : Dictionary
+var companion_creation_sex : String
+# Character creation variables
+var current_item : String
+var current_slot : String
+var current_accessory : int
+# Savegame
+var savegame : Savegame
+var savegame_temp : Savegame
+# Event
+var event : Dictionary
+# Party management
+var party_member_viewed : Character
+# Combat
+var combat : Combat
+var combat_current : Character
+var combat_target : Character
+# ?
+var area_dir_layer : String
+
+func get_item(item : String) -> Dictionary: 
+	var temp = globals.items.filter(func(n): return n["name"] == item)
+	return {} if temp.size() == 0 else temp[0]
+func get_race(race : String) -> Dictionary:
+	var temp = globals.races.filter(func(n): return n["name"] == race)
+	return {} if temp.size() == 0 else temp[0]
+func get_background(race : Dictionary, background : String) -> Dictionary:
+	var temp = race["backgrounds"].filter(func(n): return n["name"] == background)
+	return {} if temp.size() == 0 else temp[0]
 #endregion
 
 #region cursor_and_selection
@@ -298,8 +306,8 @@ func print_attribute(attribute : String, character, rounded : bool = true):
 func print_attribute_raw(attribute : String, race, background, rounded : bool = true):
 	write(attribute + ": ")
 	var value : float = 0
-	if race != null: value += race["attributes"][attribute]
-	if background != null: value += background["attributes"][attribute]
+	if race != {}: value += race["attributes"][attribute]
+	if background != {}: value += background["attributes"][attribute]
 	write(("+" if value >= 0 else "") + str(roundi(value)) if rounded else str(value), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
 # Prints a skill and it's value
 func print_skill(skill : String, character, rounded : bool = true):
@@ -310,8 +318,8 @@ func print_skill(skill : String, character, rounded : bool = true):
 func print_skill_raw(skill : String, race, background, rounded : bool = true):
 	write(skill + ": ")
 	var value : float = 0
-	if race != null: value += race["skills"][skill]
-	if background != null: value += background["skills"][skill]
+	if race != {}: value += race["skills"][skill]
+	if background != {}: value += background["skills"][skill]
 	write(("+" if value >= 0 else "") + str(roundi(value)) if rounded else str(value), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
 # Prints a slot of the equipment
 func print_slot(slot : String, character : Character, rounded : bool = true):
@@ -324,28 +332,56 @@ func print_slot(slot : String, character : Character, rounded : bool = true):
 		globals.write(character.equipment[slot])
 		globals.set_cursor_x(33)
 		var item = get_item(character.equipment[slot])
-		if item.has("def_skill"):
-			var def = item["def_skill"]
+		if item.has("DEF"):
+			var def = item["DEF"]
 			write(" ")
 			write(("+" if def >= 0 else "") + str(roundi(def)) if rounded else str(def), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
 			write(" ")
-			var dices = roundi(item["def_dice_count"])
-			var sides = roundi(item["def_dice_sides"])
+			var dices = roundi(item["PRT_dices"])
+			var sides = roundi(item["PRT_sides"])
 			write(str(dices) + "d" + str(sides))
 			write(" " + str(dices) + "-" + str(dices * sides))
 		else:
 			write("       ", "Gray")
-		if item.has("att_skill"):
-			var att = roundi(item["att_skill"] + globals.savegame.player.get_skill("ATT"))
+		if item.has("ATT"):
+			var att = roundi(item["ATT"] + globals.savegame.player.get_skill("ATT"))
 			set_cursor_x(50)
 			write(("+" if att >= 0 else "") + str(roundi(att)) if rounded else str(att), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
 			write(" ")
-			var dices = roundi(item["att_dice_count"])
-			var sides = roundi(item["att_dice_sides"] + globals.savegame.player.get_attribute("STR"))
+			var dices = roundi(item["DMG_dices"])
+			var sides = roundi(item["DMG_sides"] + globals.savegame.player.get_attribute("STR"))
 			write(str(dices) + "d" + str(sides))
 			write(" " + str(dices) + "-" + str(dices * sides))
 	else: globals.write("-")
-func print_item_for_swap(item_name : String, character : Character, rounded : bool = true):
+func print_item_from_inventory(item_name : String, character : Character):
+	globals.write_selectable(func():
+		current_item = item_name
+		globals.set_scene("scene_game_inventory_b")
+	)
+	write(item_name)
+	globals.set_cursor_x(33)
+	var item = get_item(item_name)
+	if item.has("DEF"):
+		var def = item["DEF"]
+		write(" ")
+		write(("+" if def >= 0 else "") + str(roundi(def)), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
+		write(" ")
+		var dices = roundi(item["PRT_dices"])
+		var sides = roundi(item["PRT_sides"])
+		write(str(dices) + "d" + str(sides))
+		write(" " + str(dices) + "-" + str(dices * sides))
+	else:
+		write("       ", "Gray")
+	if item.has("ATT"):
+		var att = item["ATT"]
+		set_cursor_x(50)
+		write(("+" if att >= 0 else "") + str(roundi(att)), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
+		write(" ")
+		var dices = roundi(item["DMG_dices"])
+		var sides = roundi(item["DMG_sides"])
+		write(str(dices) + "d" + str(sides))
+		write(" " + str(dices) + "-" + str(dices * (sides + int(globals.savegame.player.get_attribute("STR")))))
+func print_item_for_swap(item_name : String, character : Character):
 	globals.write_selectable(func():
 		# If the item to be equipped is an item already equipped, unequip without equipping a new one
 		if character.equipment.has(globals.current_slot) && character.equipment[globals.current_slot] == item_name:
@@ -364,24 +400,24 @@ func print_item_for_swap(item_name : String, character : Character, rounded : bo
 	write(item_name)
 	globals.set_cursor_x(33)
 	var item = get_item(item_name)
-	if item.has("def_skill"):
-		var def = item["def_skill"]
+	if item.has("DEF"):
+		var def = item["DEF"]
 		write(" ")
-		write(("+" if def >= 0 else "") + str(roundi(def)) if rounded else str(def), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
+		write(("+" if def >= 0 else "") + str(roundi(def)), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
 		write(" ")
-		var dices = roundi(item["def_dice_count"])
-		var sides = roundi(item["def_dice_sides"])
+		var dices = roundi(item["PRT_dices"])
+		var sides = roundi(item["PRT_sides"])
 		write(str(dices) + "d" + str(sides))
 		write(" " + str(dices) + "-" + str(dices * sides))
 	else:
 		write("       ", "Gray")
-	if item.has("att_skill"):
-		var att = item["att_skill"]
+	if item.has("ATT"):
+		var att = item["ATT"]
 		set_cursor_x(50)
-		write(("+" if att >= 0 else "") + str(roundi(att)) if rounded else str(att), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
+		write(("+" if att >= 0 else "") + str(roundi(att)), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
 		write(" ")
-		var dices = roundi(item["att_dice_count"])
-		var sides = roundi(item["att_dice_sides"])
+		var dices = roundi(item["DMG_dices"])
+		var sides = roundi(item["DMG_sides"])
 		write(str(dices) + "d" + str(sides))
 		write(" " + str(dices) + "-" + str(dices * (sides + int(globals.savegame.player.get_attribute("STR")))))
 # Prints a slot of the equipment
@@ -389,21 +425,21 @@ func print_slot_raw(slot : String, race, background):
 	write(slot + ":")
 	if background != null && background.has("equipment") && background["equipment"].has(slot):
 		var item = get_item(background["equipment"][slot])
-		if item.has("def_skill"):
-			var def = item["def_skill"]
+		if item.has("DEF"):
+			var def = item["DEF"]
 			write(" ")
 			write(("+" if def >= 0 else "") + str(roundi(def)), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
 			write(" ")
-			var dices = roundi(item["def_dice_count"])
-			var sides = roundi(item["def_dice_sides"])
+			var dices = roundi(item["PRT_dices"])
+			var sides = roundi(item["PRT_sides"])
 			write(str(dices) + "d" + str(sides))
-		if item.has("att_skill"):
-			var att = item["att_skill"]
+		if item.has("ATT"):
+			var att = item["ATT"]
 			set_cursor_x(29)
 			write(("+" if att >= 0 else "") + str(roundi(att)), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
 			write(" ")
-			var dices = roundi(item["att_dice_count"])
-			var sides = roundi(item["att_dice_sides"])
+			var dices = roundi(item["DMG_dices"])
+			var sides = roundi(item["DMG_sides"])
 			write(str(dices) + "d" + str(sides))
 			#if background == null: write(" " + str(dices) + "-" + str(dices * sides))
 			#else: write(" " + str(dices) + "-" + str(dices * (sides + int(race["attributes"]["STR"] + background["attributes"]["STR"]))))

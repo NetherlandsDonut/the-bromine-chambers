@@ -21,9 +21,9 @@ static func draw_scene():
 		globals.set_cursor_x(1)
 		globals.write_selectable(func():
 			if dialog.has("effects"): globals.savegame.process_effects(dialog["effects"])
-			if globals.event["ID"] == event: globals.event = null
+			if globals.event["ID"] == event: globals.event = {}
 			if globals.savegame.game_finished: globals.set_scene("scene_game_finished")
-			elif globals.event == null: globals.set_scene("scene_game_a")
+			elif globals.event == {}: globals.set_scene("scene_game_a")
 		)
 		globals.write(dialog["text"])
 		globals.modify_cursor_y(1)

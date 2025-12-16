@@ -7,19 +7,15 @@ var friends
 # Enemies in the battle
 var enemies
 
-#Initializes a new Combat from json
-static func from_json(dict) -> Combat:
-	var new = Combat.new()
-	new.turn = dict["turn"]
-	new.friends = dict["friends"]
-	new.enemies = dict["enemies"]
-	return new
-
 #Initializes a new Character
-static func create(_friends : Array, _enemies : Array) -> Combat:
+static func create(_enemies : Array) -> Combat:
 	var new = Combat.new()
 	new.turn = 1
-	new.friends = _friends
+	new.friends = [globals.savegame.player]
+	if globals.savegame.companion != null:
+		new.friends.append(globals.savegame.companion)
+	if globals.savegame.servant != null:
+		new.friends.append(globals.savegame.servant)
 	new.enemies = _enemies
 	var all = []
 	all.append_array(new.friends)

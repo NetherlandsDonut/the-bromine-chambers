@@ -23,7 +23,7 @@ static func draw_scene():
 	globals.modify_cursor_y(1)
 	globals.write_selectable(func():
 		globals.character_creation_sex = "Male"
-		if globals.character_creation_name == "?" || globals.character_creation_name_generated_for != "Male":
+		if globals.character_creation_name == "" || globals.character_creation_name_generated_for != "Male":
 			var pool = globals.character_creation_race["names"][globals.character_creation_sex]
 			globals.character_creation_name = pool[globals.rand.randi_range(0, pool.size() - 1)]
 		globals.set_scene("scene_character_creation_d")
@@ -35,7 +35,7 @@ static func draw_scene():
 	globals.modify_cursor_y(1)
 	globals.write_selectable(func():
 		globals.character_creation_sex = "Female"
-		if globals.character_creation_name == "?" || globals.character_creation_name_generated_for != "Female":
+		if globals.character_creation_name == "" || globals.character_creation_name_generated_for != "Female":
 			var pool = globals.character_creation_race["names"][globals.character_creation_sex]
 			globals.character_creation_name = pool[globals.rand.randi_range(0, pool.size() - 1)]
 		globals.set_scene("scene_character_creation_d")

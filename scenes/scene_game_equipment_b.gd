@@ -25,7 +25,7 @@ static func draw_scene():
 		globals.write("Pick an item to equip as the ranged weapon.", "Yellow")
 	elif globals.current_slot == "ACC":
 		globals.write("Pick an accessory to equip.", "Yellow")
-	var possible_to_unequip = globals.savegame.player.equipment.has(globals.current_slot)
+	var possible_to_unequip = globals.party_member_viewed.equipment.has(globals.current_slot)
 	if possible_to_unequip:
 		globals.write(" Choose the current to unequip.", "Yellow")
 		globals.set_cursor_x(0)
@@ -41,7 +41,7 @@ static func draw_scene():
 		globals.write("-".repeat(80))
 		globals.set_cursor_x(1)
 		globals.modify_cursor_y(1)
-		globals.print_item_for_swap(globals.savegame.player.equipment[globals.current_slot], globals.savegame.player)
+		globals.print_item_for_swap(globals.party_member_viewed.equipment[globals.current_slot], globals.party_member_viewed)
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))
@@ -53,7 +53,7 @@ static func draw_scene():
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))
-	for item in globals.savegame.inventory.filter(func(n): return (not globals.savegame.player.equipment.has(globals.current_slot) || n != globals.savegame.player.equipment[globals.current_slot]) && globals.get_item(n)["slot"] == globals.current_slot):
+	for item in globals.savegame.inventory.filter(func(n): return (not globals.party_member_viewed.equipment.has(globals.current_slot) || n != globals.party_member_viewed.equipment[globals.current_slot]) && globals.get_item(n)["slot"] == globals.current_slot):
 		globals.set_cursor_x(1)
 		globals.modify_cursor_y(1)
-		globals.print_item_for_swap(item, globals.savegame.player)
+		globals.print_item_for_swap(item, globals.party_member_viewed)
