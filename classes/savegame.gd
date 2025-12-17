@@ -28,6 +28,7 @@ static func from_json(dict) -> Savegame:
 	new.creation_date = dict["creation_date"] if dict.has("creation_date") else null
 	new.player = Character.from_json(dict["player"]) if dict.has("player") else null
 	new.companion = Character.from_json(dict["companion"]) if dict.has("companion") else null
+	new.servant = Character.from_json(dict["servant"]) if dict.has("servant") else null
 	new.current_area = dict["current_area"] if dict.has("current_area") else null
 	new.game_finished = dict["game_finished"] if dict.has("game_finished") else false
 	new.inventory = dict["inventory"] if dict.has("inventory") else {}
@@ -40,6 +41,7 @@ static func create(name, sex, race, background) -> Savegame:
 	new.creation_date = Time.get_datetime_dict_from_system()
 	new.player = Character.create(name, sex, race, background)
 	new.companion = null
+	new.servant = null
 	new.areas_discovered = []
 	new.sites_discovered = []
 	new.game_finished = false

@@ -3,6 +3,61 @@ extends Node
 #region program_constants
 # Game directory
 var dir = "D:/Games/The Bromine Chambers" # OS.get_executable_path().get_base_dir()
+# Audio stream for the sound effects
+var stream_effects : AudioStreamPlayer
+# Audio stream for the music
+var stream_music_a : AudioStreamPlayer
+# Audio stream for the music
+var stream_music_b : AudioStreamPlayer
+# Currently played music theme
+var current_music : String = "peace"
+# All of the game music
+var music : Dictionary = {
+	"peace": [preload("res://music/peace_a.wav"), preload("res://music/peace_b.wav"), preload("res://music/peace_c.wav")]
+}
+var sound_effects : Dictionary = {
+	"select": preload("res://sound_effects/select.wav"),
+	"confirm": preload("res://sound_effects/confirm.wav"),
+	"return": preload("res://sound_effects/return.wav")
+}
+
+# Fade the music in to avoid the ugly static
+func fade_in(player : AudioStreamPlayer, duration = 3):
+	player.volume_db = -60
+	player.play()
+	var tween = create_tween()
+	tween.tween_property(player, "volume_db", 0.0, duration).set_ease(Tween.EASE_OUT)
+	
+# Play a chosen sound effect
+func play_effect(effect : String):
+	if sound_effects.has(effect):
+		stream_effects.stream = sound_effects[effect]
+		stream_effects.play()
+
+# This function is called at the start of the program to play music and
+# then afterwards each time music track is finished, this makes the music loop randomly
+func play_music(force_start : bool = false):
+	if (force_start || globals.stream_music_b.playing) && not globals.stream_music_a.playing:
+		globals.stream_music_a.stream = music[current_music][rand.randi_range(0, music[current_music].size() - 1)]
+		fade_in(globals.stream_music_a)
+	elif globals.stream_music_a.playing && not globals.stream_music_b.playing:
+		globals.stream_music_b.stream = music[current_music][rand.randi_range(0, music[current_music].size() - 1)]
+		fade_in(globals.stream_music_b)
+
+func fade_bus_to(bus_name : String, percent : float, duration):
+	var bus_index = AudioServer.get_bus_index(bus_name)
+	if bus_index == -1: return
+	var start_db = AudioServer.get_bus_volume_db(bus_index)
+	percent = clamp(percent, 0, 100)
+	var tween = create_tween()
+	var target_db = 20.0 * (log(percent / 100.0) / log(10)) if percent / 100.0 > 0.0 else -80.0
+	tween.tween_method(func(value):
+		AudioServer.set_bus_volume_db(bus_index, value),
+		start_db,
+		target_db,
+		duration
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
 # Screen filter rectangle
 var filter : ColorRect
 # Random number generator
@@ -145,6 +200,7 @@ var areas = JSON.parse_string(FileAccess.open(dir + "/Data/areas.json", FileAcce
 var races = JSON.parse_string(FileAccess.open(dir + "/Data/races.json", FileAccess.READ).get_as_text())
 var races_starting = races.filter(func(n): return n.has("starting") && n["starting"])
 var items = JSON.parse_string(FileAccess.open(dir + "/Data/items.json", FileAccess.READ).get_as_text())
+var powers = JSON.parse_string(FileAccess.open(dir + "/Data/powers.json", FileAccess.READ).get_as_text())
 # Character creation variables
 var character_creation_name_generated_for : String
 var character_creation_name : String
@@ -184,6 +240,9 @@ func get_race(race : String) -> Dictionary:
 func get_background(race : Dictionary, background : String) -> Dictionary:
 	var temp = race["backgrounds"].filter(func(n): return n["name"] == background)
 	return {} if temp.size() == 0 else temp[0]
+func get_power(power : String) -> Dictionary:
+	var temp = globals.powers.filter(func(n): return n["name"] == power)
+	return {} if temp.size() == 0 else temp[0]
 #endregion
 
 #region cursor_and_selection
@@ -219,6 +278,7 @@ func _process(_delta):
 	var redraw = false
 	if Input.is_action_just_pressed("switch_tab"):
 		tab_swap = not tab_swap
+		play_effect("select")
 		redraw = true
 	if selectables.size() > 0:
 		if Input.is_action_just_pressed("up"):
@@ -226,33 +286,39 @@ func _process(_delta):
 			temp.sort_custom(func(a, b): return a[0].distance_to(selection) < b[0].distance_to(selection))
 			if temp.size() > 0:
 				selection = temp[0][0]
+				play_effect("select")
 				redraw = true
 		elif Input.is_action_just_pressed("right"):
 			var temp = selectables.filter(func(n): return n[0].y > selection.y)
 			temp.sort_custom(func(a, b): return a[0].distance_to(selection) < b[0].distance_to(selection))
 			if temp.size() > 0:
 				selection = temp[0][0]
+				play_effect("select")
 				redraw = true
 		elif Input.is_action_just_pressed("down"):
 			var temp = selectables.filter(func(n): return n[0].x > selection.x)
 			temp.sort_custom(func(a, b): return a[0].distance_to(selection) < b[0].distance_to(selection))
 			if temp.size() > 0:
 				selection = temp[0][0]
+				play_effect("select")
 				redraw = true
 		elif Input.is_action_just_pressed("left"):
 			var temp = selectables.filter(func(n): return n[0].y < selection.y)
 			temp.sort_custom(func(a, b): return a[0].distance_to(selection) < b[0].distance_to(selection))
 			if temp.size() > 0:
 				selection = temp[0][0]
+				play_effect("select")
 				redraw = true
 		elif Input.is_action_just_pressed("confirm") && not Input.is_action_just_pressed("ui_toggle_fullscreen"):
 			var temp = selectables.filter(func(n): return n[0] == selection)
 			if temp.size() > 0:
 				temp[0][1].call()
+				play_effect("confirm")
 				redraw = true
 	if Input.is_action_just_pressed("return"):
 		if current_return_action.is_valid():
 			current_return_action.call()
+			play_effect("return")
 			redraw = true
 	# If anything was modified, redraw the screen
 	# Without this we would be redrawing the screen each frame for no reason
@@ -390,9 +456,9 @@ func print_item_for_swap(item_name : String, character : Character):
 			globals.set_scene("scene_game_equipment_a", true)
 		else:
 			# If an item was already equipped in the slot, add that item to inventory so it's not lost
-			if character.equipment.has(globals.current_slot): globals.savegame.inventory.append(character.equipment.has[globals.current_slot])
+			if character.equipment.has(globals.current_slot): globals.savegame.inventory.append(character.equipment[globals.current_slot])
 			# Removes the item you are equipping from the inventory
-			else: globals.savegame.inventory.erase(item_name)
+			globals.savegame.inventory.erase(item_name)
 			# Change the item
 			character.equipment[globals.current_slot] = item_name
 			globals.set_scene("scene_game_equipment_a", true)

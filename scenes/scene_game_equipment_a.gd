@@ -18,7 +18,7 @@ static func draw_scene():
 	globals.write("If you want to see the overall change in DEF skill or the overall", "Yellow")
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(1)
-	globals.write("PRT your equipment provides you should look into the character panel.", "Yellow")
+	globals.write("PRT your equipment provides you should be looking in the character panel.", "Yellow")
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))

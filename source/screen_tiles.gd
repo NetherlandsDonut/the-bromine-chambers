@@ -2,11 +2,63 @@ extends Node2D
 
 # Initialises the game
 func _ready():
+	#region settings
 	if globals.settings == null:
-		globals.settings = { "interface_font": 1, "color_saturation": 1 }
+		globals.settings = {}
+	if not globals.settings.has("max_window_scale"):
+		globals.settings["interface_font"] = 1
+	elif globals.settings["interface_font"] > 1:
+		globals.settings["interface_font"] = 1
+	elif globals.settings["interface_font"] < 0:
+		globals.settings["interface_font"] = 0
+	if not globals.settings.has("max_window_scale"):
+		globals.settings["color_saturation"] = 1
+	elif globals.settings["color_saturation"] > 3:
+		globals.settings["color_saturation"] = 3
+	elif globals.settings["color_saturation"] < 0:
+		globals.settings["color_saturation"] = 0
+	if not globals.settings.has("max_window_scale"):
+		globals.settings["max_window_scale"] = 2
+	elif globals.settings["max_window_scale"] > 4:
+		globals.settings["max_window_scale"] = 4
+	elif globals.settings["max_window_scale"] < 1:
+		globals.settings["max_window_scale"] = 1
+	if not globals.settings.has("effects_volume"):
+		globals.settings["effects_volume"] = 0
+	elif globals.settings["effects_volume"] > 100:
+		globals.settings["effects_volume"] = 100
+	elif globals.settings["effects_volume"] < 0:
+		globals.settings["effects_volume"] = 0
+	if not globals.settings.has("music_volume"):
+		globals.settings["music_volume"] = 0
+	elif globals.settings["music_volume"] > 100:
+		globals.settings["music_volume"] = 100
+	elif globals.settings["music_volume"] < 0:
+		globals.settings["music_volume"] = 0
+	#endregion
+	AudioServer.set_bus_layout(preload("res://default_bus_layout.tres"))
+	globals.stream_effects = AudioStreamPlayer.new()
+	globals.stream_effects.bus = "Effects"
+	globals.fade_bus_to("Effects", globals.settings["effects_volume"], 0.1)
+	add_child(globals.stream_effects)
+	globals.stream_music_a = AudioStreamPlayer.new()
+	globals.stream_music_b = AudioStreamPlayer.new()
+	globals.stream_music_a.bus = "Music"
+	globals.stream_music_b.bus = "Music"
+	globals.fade_bus_to("Music", globals.settings["music_volume"], 0.1)
+	add_child(globals.stream_music_a)
+	add_child(globals.stream_music_b)
+	globals.play_music(true)
 	generate_screen()
 	globals.set_scene("scene_menu_a")
 	globals.draw_scene()
+
+# When music is close to being finished queue another track
+func _process(_delta):
+	if globals.stream_music_a.playing && globals.stream_music_a.get_playback_position() > globals.stream_music_a.stream.get_length() - 5.333:
+		globals.play_music()
+	elif globals.stream_music_b.playing && globals.stream_music_b.get_playback_position() > globals.stream_music_b.stream.get_length() - 5.333:
+		globals.play_music()
 
 # Generates the tiles on the screen
 func generate_screen():

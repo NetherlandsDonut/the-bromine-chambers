@@ -41,3 +41,7 @@ script = ExtResource("2_1bvp3")
 [node name="Tiles" type="Node2D" parent="SubViewportContainer/SubViewport"]
 position = Vector2(320, 180)
 script = ExtResource("3_lquwl")
+
+[node name="AudioListener2D" type="AudioListener2D" parent="SubViewportContainer/SubViewport/Tiles"]
+position = Vector2(-320, -180)
+current = true
