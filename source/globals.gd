@@ -18,7 +18,8 @@ var music : Dictionary = {
 var sound_effects : Dictionary = {
 	"select": preload("res://sound_effects/select.wav"),
 	"confirm": preload("res://sound_effects/confirm.wav"),
-	"return": preload("res://sound_effects/return.wav")
+	"return": preload("res://sound_effects/return.wav"),
+	"switch": preload("res://sound_effects/switch.wav")
 }
 
 # Fade the music in to avoid the ugly static
@@ -207,7 +208,7 @@ var character_creation_name : String
 var character_creation_race : Dictionary
 var character_creation_background : Dictionary
 var character_creation_sex : String
-# Companion creation variables
+# Companion creation variables 
 var companion_creation_name_generated_for : String
 var companion_creation_name : String
 var companion_creation_race : Dictionary
@@ -278,7 +279,7 @@ func _process(_delta):
 	var redraw = false
 	if Input.is_action_just_pressed("switch_tab"):
 		tab_swap = not tab_swap
-		play_effect("select")
+		play_effect("switch")
 		redraw = true
 	if selectables.size() > 0:
 		if Input.is_action_just_pressed("up"):
@@ -323,18 +324,6 @@ func _process(_delta):
 	# If anything was modified, redraw the screen
 	# Without this we would be redrawing the screen each frame for no reason
 	if redraw: draw_scene()
-# Converts a number into a superscript one
-func superscript(number : int) -> String:
-	if number == 1: return "¹"
-	elif number == 2: return "²"
-	elif number == 3: return "³"
-	elif number == 4: return "⁴"
-	elif number == 5: return "⁵"
-	elif number == 6: return "⁶"
-	elif number == 7: return "⁷"
-	elif number == 8: return "⁸"
-	elif number == 9: return "⁹"
-	else: return "ⁿ"
 # Writes a selectable symbol on current position
 func write_selectable(action : Callable):
 	selectables.append([cursor, action])

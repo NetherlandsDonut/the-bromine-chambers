@@ -13,6 +13,9 @@ config_version=5
 config/name="The Bromine Chambers"
 run/main_scene="uid://eurvug7yje5s"
 config/features=PackedStringArray("4.5", "Forward Plus")
+boot_splash/show_image=false
+boot_splash/use_filter=false
+config/icon="uid://cfblmoe6aq3vs"
 
 [audio]
 
