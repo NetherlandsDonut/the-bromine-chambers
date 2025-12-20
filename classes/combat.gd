@@ -1,11 +1,13 @@
 class_name Combat extends Object
 
 # Turn of the combat
-var turn
+var turn : int
 # Friendly participants in the battle
-var friends
+var friends : Array
 # Enemies in the battle
-var enemies
+var enemies : Array
+# Loot yielded from the battle
+var loot : Array
 
 #Initializes a new Character
 static func create(_enemies : Array) -> Combat:

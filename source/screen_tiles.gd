@@ -36,7 +36,7 @@ func _ready():
 	elif globals.settings["music_volume"] < 0:
 		globals.settings["music_volume"] = 0
 	#endregion
-	AudioServer.set_bus_layout(preload("res://default_bus_layout.tres"))
+	AudioServer.set_bus_layout(preload("res://other/default_bus_layout.tres"))
 	globals.stream_effects = AudioStreamPlayer.new()
 	globals.stream_effects.bus = "Effects"
 	globals.fade_bus_to("Effects", globals.settings["effects_volume"], 0.1)

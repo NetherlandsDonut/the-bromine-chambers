@@ -31,15 +31,15 @@ static func draw_scene():
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(1)
 	globals.write_selectable(func():
-		globals.set_scene("scene_menu_b")
-	)
-	globals.write("Load a saved game")
-	globals.set_cursor_x(1)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
 		globals.set_scene("scene_menu_d")
 	)
 	globals.write("Game settings")
+	globals.set_cursor_x(1)
+	globals.modify_cursor_y(1)
+	globals.write_selectable(func():
+		globals.set_scene("scene_menu_b")
+	)
+	globals.write("Load a saved game")
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(1)
 	globals.write_selectable(func():

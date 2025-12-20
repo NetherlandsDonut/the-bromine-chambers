@@ -26,7 +26,7 @@ static func draw_scene():
 	globals.write("-".repeat(80))
 	var files = globals.list_files_in_directory("Saved Games")
 	for file : String in files:
-		var save = Savegame.from_json(Serializer.deserialize(globals.savegame, JSON.parse_string(FileAccess.open(globals.dir + "/Saved Games/" + file, FileAccess.READ).get_as_text())))
+		var save : Savegame = Savegame.from_json(JSON.parse_string(FileAccess.open(globals.dir + "/Saved Games/" + file, FileAccess.READ).get_as_text()))
 		if save.game_finished: continue
 		globals.set_cursor_x(1)
 		globals.modify_cursor_y(1)

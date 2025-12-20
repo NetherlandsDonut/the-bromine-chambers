@@ -96,7 +96,7 @@ var palette = [
 		"DarkNavy": Color.from_rgba8(49, 55, 135, 255),
 		"DarkPurple": Color.from_rgba8(107, 49, 131, 255),
 		"DarkPink": Color.from_rgba8(135, 49, 132, 255),
-		"White": Color.from_rgba8(204, 204, 204, 255),
+		"White": Color.from_rgba8(224, 224, 224, 255),
 		"LightGray": Color.from_rgba8(164, 164, 164, 255),
 		"Gray": Color.from_rgba8(124, 124, 124, 255),
 		"DarkGray": Color.from_rgba8(84, 84, 84, 255),
@@ -122,7 +122,7 @@ var palette = [
 		"DarkNavy": Color.from_rgba8(37, 44, 147, 255),
 		"DarkPurple": Color.from_rgba8(112, 37, 143, 255),
 		"DarkPink": Color.from_rgba8(147, 37, 143, 255),
-		"White": Color.from_rgba8(204, 204, 204, 255),
+		"White": Color.from_rgba8(224, 224, 224, 255),
 		"LightGray": Color.from_rgba8(164, 164, 164, 255),
 		"Gray": Color.from_rgba8(124, 124, 124, 255),
 		"DarkGray": Color.from_rgba8(84, 84, 84, 255),
@@ -148,7 +148,7 @@ var palette = [
 		"DarkNavy": Color.from_rgba8(0, 8, 188, 255),
 		"DarkPurple": Color.from_rgba8(128, 0, 183, 255),
 		"DarkPink": Color.from_rgba8(188, 0, 181, 255),
-		"White": Color.from_rgba8(204, 204, 204, 255),
+		"White": Color.from_rgba8(224, 224, 224, 255),
 		"LightGray": Color.from_rgba8(164, 164, 164, 255),
 		"Gray": Color.from_rgba8(124, 124, 124, 255),
 		"DarkGray": Color.from_rgba8(84, 84, 84, 255),
@@ -408,6 +408,34 @@ func print_slot(slot : String, character : Character, rounded : bool = true):
 			write(str(dices) + "d" + str(sides))
 			write(" " + str(dices) + "-" + str(dices * sides))
 	else: globals.write("-")
+func print_item_for_pickup(item_name : String, from : Array):
+	globals.write_selectable(func():
+		globals.savegame.inventory.append(item_name)
+		from.erase(item_name)
+	)
+	write(item_name)
+	globals.set_cursor_x(33)
+	var item = get_item(item_name)
+	if item.has("DEF"):
+		var def = item["DEF"]
+		write(" ")
+		write(("+" if def >= 0 else "") + str(roundi(def)), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
+		write(" ")
+		var dices = roundi(item["PRT_dices"])
+		var sides = roundi(item["PRT_sides"])
+		write(str(dices) + "d" + str(sides))
+		write(" " + str(dices) + "-" + str(dices * sides))
+	else:
+		write("       ", "Gray")
+	if item.has("ATT"):
+		var att = item["ATT"]
+		set_cursor_x(50)
+		write(("+" if att >= 0 else "") + str(roundi(att)), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
+		write(" ")
+		var dices = roundi(item["DMG_dices"])
+		var sides = roundi(item["DMG_sides"])
+		write(str(dices) + "d" + str(sides))
+		write(" " + str(dices) + "-" + str(dices * sides))
 func print_item_from_inventory(item_name : String, character : Character):
 	globals.write_selectable(func():
 		current_item = item_name
