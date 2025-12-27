@@ -709,6 +709,8 @@ func print_stats_raw(race, background, just_first_page : bool = true, rounded : 
 #region scene_management
 # Currently active scene
 var current_scene : Script
+# Name of the currently active scene
+var current_scene_name : String
 # Changes the scene to a different one
 func set_scene(screen : String, load_selection : bool = false):
 	# When loading a saved selection; use the screen filter
@@ -720,7 +722,9 @@ func set_scene(screen : String, load_selection : bool = false):
 	# Change the scene to a new one
 	var new_scene = load("res://scenes/" + screen + ".gd")
 	# Change the scene to a new one if it was successfuly loaded
-	if new_scene != null: current_scene = new_scene
+	if new_scene != null:
+		current_scene_name = screen
+		current_scene = new_scene
 	# Reset selection to avoid any weird selection persisting between scenes
 	# and potentially load the old selection that was saved in this scene before
 	selection = Vector2i(-1, -1) if not load_selection else current_scene.saved_selection
@@ -730,7 +734,7 @@ func draw_scene():
 	current_scene.draw_scene()
 	# Hookup to the most top-left selectable that is available
 	# in the scene if the selection is out of bounds
-	if selection == Vector2i(-1, -1) && selectables.size() > 0:
+	if selection == Vector2i(-1, -1) && selectables.size() > 0 && !current_scene_name.contains("event"):
 		var temp = selectables
 		temp.sort_custom(func(a, b): return a[0] < b[0])
 		selection = temp[0][0]

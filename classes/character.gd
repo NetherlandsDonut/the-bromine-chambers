@@ -16,6 +16,14 @@ var natural_equipment
 var accessories
 # Known powers by the character
 var known_powers
+# Action points in combat
+var action_points
+# Hit points
+var hit_points
+# Current amount of wounds
+var wounds
+# Current amount of initiative
+var initiative
 
 #Initializes a new Character from json
 static func from_json(dict) -> Character:
@@ -29,6 +37,10 @@ static func from_json(dict) -> Character:
 	new.natural_equipment = dict["natural_equipment"]
 	new.accessories = dict["accessories"]
 	new.known_powers = dict["known_powers"]
+	new.action_points = dict["action_points"]
+	new.hit_points = dict["hit_points"]
+	new.wounds = dict["wounds"]
+	new.initiative = dict["initiative"]
 	return new
 	
 #Initializes a new Character
@@ -54,6 +66,10 @@ static func create(_name, _sex, _race, _background) -> Character:
 	if _background != null && _background.has("powers"):
 		for power in _background["powers"]:
 			new.known_powers.append(power)
+	new.action_points = 3
+	new.hit_points = new.max_hit_points()
+	new.wounds = 0
+	new.initiative = 0
 	return new
 	
 #Initializes a new Character
@@ -78,15 +94,23 @@ static func create_random(_race) -> Character:
 		if random_background.has("powers"):
 			for power in random_background["powers"]:
 				new.known_powers.append(power)
+	new.action_points = 3
+	new.hit_points = new.max_hit_points()
+	new.wounds = 0
+	new.initiative = 0
 	return new
+	
+# Gets how much hit points this character has per wound
+func max_hit_points() -> int:
+	return (get_attribute("VIT") + 10) * 10
 
 #Gets the name or just the race in case of lack of name
 func get_name() -> String:
 	return race if name == null else name
 
 #Gets an attribute
-func get_attribute(attribute) -> float:
-	var amount : float = 0
+func get_attribute(attribute) -> int:
+	var amount : int = 0
 	var _race = globals.get_race(race)
 	if race != null: amount += _race["attributes"][attribute]
 	if background != null:
@@ -95,8 +119,8 @@ func get_attribute(attribute) -> float:
 	return amount
 
 #Gets a skill
-func get_skill(skill) -> float:
-	var amount : float = 0
+func get_skill(skill) -> int:
+	var amount : int = 0
 	var _race = globals.get_race(race)
 	if race != null: amount += _race["skills"][skill]
 	var _background = globals.get_background(_race, background)

@@ -60,9 +60,6 @@ static func draw_scene():
 		globals.get_tree().quit()
 	)
 	globals.write("Save the game and exit")
-	globals.set_cursor_x(0)
-	globals.modify_cursor_y(1)
-	globals.write("-".repeat(80))
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(1)
 	globals.write_selectable(func():

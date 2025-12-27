@@ -4,6 +4,68 @@ extends Node
 static var saved_selection : Vector2i = Vector2i(-1, -1)
 
 # Draws the scene
+static func draw_bars_left(character : Character):
+	var title = character.get_name()
+	globals.modify_cursor_y(1)
+	globals.write_selectable(func():
+		globals.set_scene("scene_game_character_a")
+	)
+	var this_one_selected = false
+	if globals.last_write_selectable_active:
+		this_one_selected = true
+	globals.write("")
+	globals.modify_cursor_y(-1)
+	var x = globals.cursor.y
+	globals.set_cursor_x(x)
+	globals.modify_cursor_y(1)
+	globals.write(title + " ", "Cyan" if this_one_selected else "LightGray")
+	if character.action_points > 0:
+		globals.write("♦".repeat(character.action_points), "Blue")
+	if character.action_points < 3:
+		globals.write("♦".repeat(3 - character.action_points), "DimGray")
+	globals.modify_cursor_x(1)
+	if character.initiative >= 0: globals.write("+" + str(character.initiative), "Gray")
+	else: globals.write(str(character.initiative), "Gray")
+	globals.set_cursor_x(x)
+	globals.modify_cursor_y(1)
+	var bar_size = title.length() + 2
+	var health_percent = 100.0 / character.max_hit_points() * character.hit_points - 20
+	var healthy_bar_size = int(bar_size / 100.0 * health_percent)
+	globals.write("▀".repeat(healthy_bar_size), "Green" if character.wounds == 0 else ("Yellow" if character.wounds == 1 else "Red"))
+	globals.write("▀".repeat(bar_size - healthy_bar_size), "DimGray")
+	
+# Draws the scene
+static func draw_bars_right(character : Character):
+	var title = character.get_name()
+	globals.modify_cursor_x(-title.length())
+	var x = globals.cursor.y
+	if character.initiative >= 0: globals.write("+" + str(character.initiative), "Gray")
+	else: globals.write(str(character.initiative), "Gray")
+	globals.modify_cursor_x(title.length() - 3)
+	if character.action_points > 0:
+		globals.write("♦".repeat(character.action_points), "Blue")
+	if character.action_points < 3:
+		globals.write("♦".repeat(3 - character.action_points), "DimGray")
+	globals.set_cursor_x(x)
+	globals.modify_cursor_y(1)
+	globals.write(" " + title + " ", "Black", "LightGray")
+	globals.set_cursor_x(x)
+	globals.modify_cursor_y(1)
+	var bar_size = title.length() + 2
+	var health_percent = 100.0 / character.max_hit_points() * character.hit_points
+	var healthy_bar_size = int(bar_size / 100.0 * health_percent)
+	globals.write("▀".repeat(bar_size - healthy_bar_size), "DarkGray")
+	globals.write("▀".repeat(healthy_bar_size), "Green" if character.wounds == 0 else ("Yellow" if character.wounds == 1 else "Red"))
+	globals.modify_cursor_xy(1, -1)
+	globals.write_selectable(func():
+		globals.set_scene("scene_game_character_a")
+	)
+	if globals.last_write_selectable_active:
+		globals.combat_target = character
+	globals.modify_cursor_x(-3)
+	globals.write("")
+
+# Draws the scene
 static func draw_scene():
 	globals.set_return_action(func():
 		globals.set_scene("scene_game_a", true)
@@ -13,12 +75,92 @@ static func draw_scene():
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))
-	globals.set_cursor_x(1)
-	globals.modify_cursor_y(1)
-	globals.write("Turn 1 - " + globals.savegame.current_area)
-	globals.set_cursor_x(0)
-	globals.modify_cursor_y(1)
-	globals.write("-".repeat(80))
+	globals.set_cursor_y(12)
+	for character in globals.combat.friends:
+		globals.set_cursor_x(1)
+		draw_bars_left(character)
+		globals.modify_cursor_y(-5)
+	for character in globals.combat.friends:
+		globals.set_cursor_x(1)
+		draw_bars_left(character)
+		globals.modify_cursor_y(-5)
+	globals.set_cursor_y(12)
+	for character in globals.combat.enemies:
+		globals.set_cursor_x(75)
+		draw_bars_right(character)
+		globals.modify_cursor_y(-5)
+
+	#globals.write("This is the order with which characters will move, starting from the top.", "Yellow")
+	#globals.set_cursor_x(0)
+	#globals.modify_cursor_y(1)
+	#globals.write("-".repeat(80))
+	#globals.set_cursor_x(1)
+	#globals.modify_cursor_y(1)
+	#globals.write("Initiative")
+	#globals.set_cursor_x(17)
+	#globals.write("Characters")
+	#globals.set_cursor_x(0)
+	#globals.modify_cursor_y(1)
+	#globals.write("-".repeat(80))
+	#globals.set_cursor_x(1)
+	#globals.modify_cursor_y(1)
+	#globals.write("7 - 8")
+	#globals.set_cursor_x(17)
+	#globals.write(" Greater Fire Elemental ", "Black", "LightGray")
+	#globals.set_cursor_x(0)
+	#globals.modify_cursor_y(1)
+	#globals.write("-".repeat(80))
+	#globals.set_cursor_x(1)
+	#globals.modify_cursor_y(1)
+	#globals.write("+2")
+	#globals.set_cursor_x(17)
+	#globals.write(" Ciaran ", "Black", "LightGray")
+	#globals.set_cursor_x(0)
+	#globals.modify_cursor_y(1)
+	#globals.write("-".repeat(80))
+	#globals.set_cursor_x(1)
+	#globals.modify_cursor_y(1)
+	#globals.write("            III ")
+	#globals.write(" Beastman Skeleton ", "Black", "Red")
+	#globals.set_cursor_x(0)
+	#globals.modify_cursor_y(1)
+	#globals.write("-".repeat(80))
+	#globals.set_cursor_x(1)
+	#globals.modify_cursor_y(1)
+	#globals.write("             IV ")
+	#globals.set_cursor_x(1)
+	#globals.write("4 - 5")
+	#globals.set_cursor_x(17)
+	#globals.write(" Beastman Skeleton ", "Black", "Red")
+	#globals.set_cursor_x(0)
+	#globals.modify_cursor_y(1)
+	#globals.write("-".repeat(80))
+	#globals.set_cursor_x(1)
+	#globals.modify_cursor_y(1)
+	#globals.write("              V ")
+	#globals.write(" Beastman Skeleton ", "Black", "Red")
+	#globals.set_cursor_x(0)
+	#globals.modify_cursor_y(1)
+	#globals.write("-".repeat(80))
+	#globals.set_cursor_x(1)
+	#globals.modify_cursor_y(1)
+	#globals.write("             VI ")
+	#globals.write(" Beastman Skeleton ", "Black", "Red")
+	
+	#globals.set_cursor_x(1)
+	#globals.modify_cursor_y(1)
+	#globals.write(" Gt. Fire Elemental ", "Black", "LightGray")
+	#globals.write(" ►")
+	#globals.modify_cursor_x(1)
+	#globals.write("██████         ", "Yellow", "DimGray")
+	#globals.write(" ►")
+	#globals.modify_cursor_x(1)
+	#globals.write("████████", "Green", "DimGray")
+	#globals.write(" ►")
+	#globals.modify_cursor_x(1)
+	#globals.write(" Bst. Skeleton ", "Black", "Red")
+	
+	#globals.write("Turn 1 - " + globals.savegame.current_area)
 	#for friend in globals.savegame.combat.friends:
 		#globals.set_cursor_x(1)
 		#globals.modify_cursor_y(1)
@@ -26,17 +168,17 @@ static func draw_scene():
 			##globals.set_scene("ass", true)
 		##)
 		#globals.write(friend.get_name(), "Gray")
-	globals.set_cursor_y(4)
-	for enemy in globals.combat.enemies:
-		globals.modify_cursor_x(1 + globals.combat.enemies.find(enemy) * 16)
-		globals.write(enemy.get_name(), "Gray")
+	#globals.set_cursor_y(4)
+	#for enemy in globals.combat.enemies:
+		#globals.modify_cursor_x(1 + globals.combat.enemies.find(enemy) * 16)
+		#globals.write(enemy.get_name(), "Gray")
 	globals.set_cursor_xy(0, 15)
 	globals.write("-".repeat(80))
 	globals.set_cursor_xy(0, 17)
 	globals.write("-".repeat(80))
 	if globals.combat_current != null:
 		globals.set_cursor_xy(1, 16)
-		globals.write(globals.combat_current.get_name())
+		globals.write(" " + globals.combat_current.get_name() + " ", "Black", "LightGray")
 		globals.set_cursor_x(1)
 		globals.modify_cursor_y(2)
 		globals.write("Health")
@@ -57,6 +199,8 @@ static func draw_scene():
 		globals.write("Defences")
 		globals.set_cursor_x(17)
 		globals.write("+1 2-4")
+	if globals.combat_target == null:
+		globals.combat_target = globals.combat.enemies[0]
 	if globals.combat_target != null:
 		globals.set_cursor_xy(33, 16)
 		globals.write(globals.combat_target.get_name())

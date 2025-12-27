@@ -1,17 +1,29 @@
 extends Node2D
 
+# On change of focus
+func _notification(what):
+	if globals.settings != null && get_tree() != null:
+		if what == NOTIFICATION_APPLICATION_PAUSED || what == NOTIFICATION_APPLICATION_RESUMED || NOTIFICATION_WM_WINDOW_FOCUS_OUT || NOTIFICATION_WM_WINDOW_FOCUS_IN:
+			if globals.settings.has("works_in_background") && globals.settings["works_in_background"]:
+				if get_tree().paused: get_tree().paused = false
+			else:
+				if what == NOTIFICATION_APPLICATION_PAUSED || what == NOTIFICATION_WM_WINDOW_FOCUS_OUT: get_tree().paused = true
+				elif what == NOTIFICATION_APPLICATION_RESUMED || what == NOTIFICATION_WM_WINDOW_FOCUS_IN: get_tree().paused = false
+		
 # Initialises the game
 func _ready():
 	#region settings
 	if globals.settings == null:
 		globals.settings = {}
-	if not globals.settings.has("max_window_scale"):
+	if not globals.settings.has("works_in_background"):
+		globals.settings["works_in_background"] = false
+	if not globals.settings.has("interface_font"):
 		globals.settings["interface_font"] = 1
 	elif globals.settings["interface_font"] > 1:
 		globals.settings["interface_font"] = 1
 	elif globals.settings["interface_font"] < 0:
 		globals.settings["interface_font"] = 0
-	if not globals.settings.has("max_window_scale"):
+	if not globals.settings.has("color_saturation"):
 		globals.settings["color_saturation"] = 1
 	elif globals.settings["color_saturation"] > 3:
 		globals.settings["color_saturation"] = 3

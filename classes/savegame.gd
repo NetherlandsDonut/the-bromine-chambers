@@ -48,8 +48,6 @@ static func create(name, sex, race, background) -> Savegame:
 	new.player = Character.create(name, sex, race, background)
 	new.companion = null
 	new.servant = null
-	new.areas_discovered = []
-	new.sites_discovered = []
 	new.game_finished = false
 	new.current_position = -1
 	new.inventory = []
@@ -96,12 +94,10 @@ static func create(name, sex, race, background) -> Savegame:
 	return new
 
 # Gives the file name for this savegame
-func file_name():
-	return format_date() + " " + str("%02d" % creation_date["hour"]) + "-" + str("%02d" % creation_date["minute"]) + "-" + str("%02d" % creation_date["second"]) + " " + str(player.name) + "-" + str(player.race) + "-" + str(player.background)
+func file_name(): return format_date() + " " + str("%02d" % creation_date["hour"]) + "-" + str("%02d" % creation_date["minute"]) + "-" + str("%02d" % creation_date["second"]) + " " + str(player.name) + "-" + str(player.race) + "-" + str(player.background)
 
 # Gives the file name for this savegame
-func format_date():
-	return str("%04d" % creation_date["year"]) + "-" + str("%02d" % creation_date["month"]) + "-" + str("%02d" % creation_date["day"])
+func format_date(): return str("%04d" % creation_date["year"]) + "-" + str("%02d" % creation_date["month"]) + "-" + str("%02d" % creation_date["day"])
 
 # Process a list of effects
 func process_effects(effects : Array):
@@ -114,7 +110,13 @@ func process_effect(effect):
 	if effect == null: return
 	if effect.has("type"):
 		if effect.has("value"):
-			if effect["type"] == "unlock_area":
+			if effect["type"] == "show_event":
+				var index = globals.events.find_custom(func(n): return n["ID"] == effect["value"])
+				if index >= 0:
+					if globals.current_scene_name.contains("event"):
+						globals.selection = Vector2i(-1, -1)
+					globals.event = globals.events[index]
+			elif effect["type"] == "unlock_area":
 				areas_discovered.append(effect["value"])
 				if current_area == "": current_area = effect["value"]
 			elif effect["type"] == "unlock_site":
@@ -125,6 +127,14 @@ func process_effect(effect):
 					current_position = find
 					if areas[current_area]["tiles"].size() > find + 1: areas[current_area]["tiles"][find + 1]["visible"] = true
 					if find > 0: areas[current_area]["tiles"][find - 1]["visible"] = true
+			elif effect["type"] == "change_area":
+				current_area = effect["value"]
+				var find = areas[current_area]["tiles"].find_custom(func(n): return n.has("site") && n["site"]["name"] == effect["at"])
+				areas[current_area]["tiles"][find]["visible"] = true
+				areas[current_area]["tiles"][find]["explored"] = true
+				current_position = find
+				if areas[current_area]["tiles"].size() > find + 1: areas[current_area]["tiles"][find + 1]["visible"] = true
+				if find > 0: areas[current_area]["tiles"][find - 1]["visible"] = true
 			elif effect["type"] == "set_flag" && effect.has("flag"):
 				flags[effect["flag"]] = effect["value"]
 		else:

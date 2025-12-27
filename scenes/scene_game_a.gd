@@ -79,6 +79,11 @@ static func draw_scene():
 		if globals.savegame.current_position > 0:
 			globals.savegame.current_position -= 1
 		var new_tile = globals.savegame.areas[globals.savegame.current_area]["tiles"][globals.savegame.current_position]
+		if not new_tile["explored"] && new_tile.has("Site") && new_tile["Site"].has("discovery_event"):
+			var index = globals.events.find_custom(func(n): return n["ID"] == new_tile["site"]["discovery_event"])
+			if index >= 0:
+				globals.event = globals.events[index]
+				globals.set_scene("scene_game_event_a")
 		new_tile["explored"] = true
 		if globals.savegame.current_position > 0:
 			globals.savegame.areas[globals.savegame.current_area]["tiles"][globals.savegame.current_position - 1]["visible"] = true
@@ -89,6 +94,11 @@ static func draw_scene():
 		if globals.savegame.current_position < globals.savegame.areas[globals.savegame.current_area]["tiles"].size() - 1:
 			globals.savegame.current_position += 1
 		var new_tile = globals.savegame.areas[globals.savegame.current_area]["tiles"][globals.savegame.current_position]
+		if not new_tile["explored"] && new_tile.has("site") && new_tile["site"].has("discovery_event"):
+			var index = globals.events.find_custom(func(n): return n["ID"] == new_tile["site"]["discovery_event"])
+			if index >= 0:
+				globals.event = globals.events[index]
+				globals.set_scene("scene_game_event_a")
 		new_tile["explored"] = true
 		if globals.savegame.current_position < globals.savegame.areas[globals.savegame.current_area]["tiles"].size() - 1:
 			globals.savegame.areas[globals.savegame.current_area]["tiles"][globals.savegame.current_position + 1]["visible"] = true
@@ -103,7 +113,7 @@ static func draw_scene():
 	globals.set_cursor_xy(3, 20)
 	for i in range(-7, 8):
 		var id = globals.savegame.current_position + i
-		if i == -7 && id > 0:
+		if i == -7 && id > 0 && globals.savegame.areas[globals.savegame.current_area]["tiles"][id - 1]["visible"]:
 			globals.modify_cursor_x(-2)
 			globals.write("←", "Gray")
 			globals.modify_cursor_x(1)
@@ -131,5 +141,5 @@ static func draw_scene():
 		else: globals.write("    ")
 		#if i == 0: globals.write(" ←")
 		globals.modify_cursor_x(1)
-		if i == 7 && id < globals.savegame.areas[globals.savegame.current_area]["tiles"].size() - 2:
+		if i == 7 && id < globals.savegame.areas[globals.savegame.current_area]["tiles"].size() - 2 && globals.savegame.areas[globals.savegame.current_area]["tiles"][id + 1]["visible"]:
 			globals.write("→", "Gray")

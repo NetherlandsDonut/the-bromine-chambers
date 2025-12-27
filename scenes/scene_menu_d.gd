@@ -16,10 +16,19 @@ static func draw_scene():
 	globals.write("-".repeat(80))
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(1)
-	globals.write("Resolution")
+	globals.write("System")
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))
+	globals.set_cursor_x(1)
+	globals.modify_cursor_y(1)
+	globals.write_selectable(func():
+		globals.settings["works_in_background"] = not globals.settings["works_in_background"]
+		globals.save_file(globals.settings, "Settings", "settings")
+	)
+	globals.write("Works in background")
+	globals.set_cursor_x(33)
+	globals.write("True" if globals.settings["works_in_background"] else "False")
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(1)
 	globals.write_selectable(func():
