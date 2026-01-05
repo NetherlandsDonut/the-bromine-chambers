@@ -17,7 +17,7 @@ static func draw_scene():
 	globals.modify_cursor_y(1)
 	globals.write("Inventory items")
 	globals.set_cursor_x(33)
-	globals.write("  D PRT OUTPUT    A DMG OUTPUT", "DimGray")
+	globals.write("  D PRT OUTPUT    A DMG IN OUTPUT", "DimGray")
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))

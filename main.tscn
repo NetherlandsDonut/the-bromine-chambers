@@ -35,7 +35,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(1, 1, 1, 0.3254902)
+color = Color(1, 1, 1, 0.32549)
 script = ExtResource("2_1bvp3")
 
 [node name="Tiles" type="Node2D" parent="SubViewportContainer/SubViewport"]

@@ -59,7 +59,7 @@ static func draw_scene():
 		globals.set_cursor_x(33)
 		globals.write("  D PRT OUTPUT", "DimGray")
 		globals.set_cursor_x(49)
-		globals.write("  A DMG OUTPUT", "DimGray")
+		globals.write("  A DMG IN OUTPUT", "DimGray")
 		globals.set_cursor_x(0)
 		globals.modify_cursor_y(1)
 		globals.write("-".repeat(80))

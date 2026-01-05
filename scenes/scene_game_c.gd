@@ -48,7 +48,7 @@ static func draw_scene():
 		if powers.size() > 0: globals.set_scene("scene_game_powers_a")
 		else: globals.set_scene("scene_game_powers_b")
 	)
-	globals.write("View known combat powers")
+	globals.write("View known powers")
 	if not is_this_you && not is_this_your_companion:
 		globals.set_cursor_x(1)
 		globals.modify_cursor_y(1)

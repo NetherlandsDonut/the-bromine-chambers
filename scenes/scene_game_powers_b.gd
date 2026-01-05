@@ -9,7 +9,7 @@ static func draw_scene():
 		globals.set_scene("scene_game_c", true)
 	)
 	globals.set_cursor_x(1)
-	globals.write("This character doesn't know any combat powers.", "Yellow")
+	globals.write("This character doesn't know any powers.", "Yellow")
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))

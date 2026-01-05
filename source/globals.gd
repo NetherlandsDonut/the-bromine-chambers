@@ -59,6 +59,9 @@ func fade_bus_to(bus_name : String, percent : float, duration):
 		duration
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
+func roll(chance : int) -> bool:
+	return randi_range(0, 99) < chance
+
 # Screen filter rectangle
 var filter : ColorRect
 # Random number generator
@@ -229,6 +232,8 @@ var party_member_viewed : Character
 var combat : Combat
 var combat_current : Character
 var combat_target : Character
+var combat_result : String
+var combat_action : String
 # ?
 var area_dir_layer : String
 
@@ -280,6 +285,10 @@ func _process(_delta):
 	if Input.is_action_just_pressed("switch_tab"):
 		tab_swap = not tab_swap
 		play_effect("switch")
+		if current_scene_name == "scene_game_combat_b":
+			globals.set_scene("scene_game_combat_log")
+		elif current_scene_name == "scene_game_combat_log":
+			globals.set_scene("scene_game_combat_b")
 		redraw = true
 	if selectables.size() > 0:
 		if Input.is_action_just_pressed("up"):
@@ -353,22 +362,22 @@ func write(text, fore_color = "LightGray", back_color = "Black"):
 	last_write_selectable = false
 	last_write_selectable_active = false
 # Prints an attribute and it's value
-func print_attribute(attribute : String, character, rounded : bool = true):
+func print_attribute(attribute : String, character):
 	write(attribute + ": ")
 	var value = character.get_attribute(attribute)
-	write(("+" if value >= 0 else "") + str(roundi(value)) if rounded else str(value), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
+	write(("+" if value >= 0 else "") + str(roundi(value)), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
 # Prints an attribute and it's value in character creation
-func print_attribute_raw(attribute : String, race, background, rounded : bool = true):
+func print_attribute_raw(attribute : String, race, background):
 	write(attribute + ": ")
 	var value : float = 0
 	if race != {}: value += race["attributes"][attribute]
 	if background != {}: value += background["attributes"][attribute]
-	write(("+" if value >= 0 else "") + str(roundi(value)) if rounded else str(value), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
+	write(("+" if value >= 0 else "") + str(roundi(value)), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
 # Prints a skill and it's value
-func print_skill(skill : String, character, rounded : bool = true):
+func print_skill(skill : String, character):
 	write(skill + ": ")
 	var value = character.get_skill(skill)
-	write(("+" if value >= 0 else "") + str(roundi(value)) if rounded else str(value), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
+	write(("+" if value >= 0 else "") + str(roundi(value)), "Red" if value < 0 else ("Green" if value > 0 else "Gray"))
 # Prints a skill and it's value in character creation
 func print_skill_raw(skill : String, race, background, rounded : bool = true):
 	write(skill + ": ")
@@ -406,6 +415,7 @@ func print_slot(slot : String, character : Character, rounded : bool = true):
 			var dices = roundi(item["DMG_dices"])
 			var sides = roundi(item["DMG_sides"] + globals.savegame.player.get_attribute("STR"))
 			write(str(dices) + "d" + str(sides))
+			write((" +" + str(roundi(-item["IN_cost"])) if item["IN_cost"] < 0 else " -" + str(roundi(item["IN_cost"]))), "Red" if item["IN_cost"] > 0 else ("Green" if item["IN_cost"] < 0 else "Gray"))
 			write(" " + str(dices) + "-" + str(dices * sides))
 	else: globals.write("-")
 func print_item_for_pickup(item_name : String, from : Array):
@@ -435,6 +445,7 @@ func print_item_for_pickup(item_name : String, from : Array):
 		var dices = roundi(item["DMG_dices"])
 		var sides = roundi(item["DMG_sides"])
 		write(str(dices) + "d" + str(sides))
+		write((" +" + str(roundi(-item["IN_cost"])) if item["IN_cost"] < 0 else " -" + str(roundi(item["IN_cost"]))), "Red" if item["IN_cost"] > 0 else ("Green" if item["IN_cost"] < 0 else "Gray"))
 		write(" " + str(dices) + "-" + str(dices * sides))
 func print_item_from_inventory(item_name : String, character : Character):
 	globals.write_selectable(func():
@@ -463,6 +474,7 @@ func print_item_from_inventory(item_name : String, character : Character):
 		var dices = roundi(item["DMG_dices"])
 		var sides = roundi(item["DMG_sides"])
 		write(str(dices) + "d" + str(sides))
+		write((" +" + str(roundi(-item["IN_cost"])) if item["IN_cost"] < 0 else " -" + str(roundi(item["IN_cost"]))), "Red" if item["IN_cost"] > 0 else ("Green" if item["IN_cost"] < 0 else "Gray"))
 		write(" " + str(dices) + "-" + str(dices * (sides + int(globals.savegame.player.get_attribute("STR")))))
 func print_item_for_swap(item_name : String, character : Character):
 	globals.write_selectable(func():
@@ -502,6 +514,7 @@ func print_item_for_swap(item_name : String, character : Character):
 		var dices = roundi(item["DMG_dices"])
 		var sides = roundi(item["DMG_sides"])
 		write(str(dices) + "d" + str(sides))
+		write((" +" + str(roundi(-item["IN_cost"])) if item["IN_cost"] < 0 else " -" + str(roundi(item["IN_cost"]))), "Red" if item["IN_cost"] > 0 else ("Green" if item["IN_cost"] < 0 else "Gray"))
 		write(" " + str(dices) + "-" + str(dices * (sides + int(globals.savegame.player.get_attribute("STR")))))
 # Prints a slot of the equipment
 func print_slot_raw(slot : String, race, background):
@@ -524,10 +537,40 @@ func print_slot_raw(slot : String, race, background):
 			var dices = roundi(item["DMG_dices"])
 			var sides = roundi(item["DMG_sides"])
 			write(str(dices) + "d" + str(sides))
-			#if background == null: write(" " + str(dices) + "-" + str(dices * sides))
-			#else: write(" " + str(dices) + "-" + str(dices * (sides + int(race["attributes"]["STR"] + background["attributes"]["STR"]))))
+			write((" +" + str(roundi(-item["IN_cost"])) if item["IN_cost"] < 0 else " -" + str(roundi(item["IN_cost"]))), "Red" if item["IN_cost"] > 0 else ("Green" if item["IN_cost"] < 0 else "Gray"))
+			if background == null: write(" " + str(dices) + "-" + str(dices * sides))
+			else: write(" " + str(dices) + "-" + str(dices * (sides + int(race["attributes"]["STR"] + background["attributes"]["STR"]))))
 	else:
 		write("")
+func print_slot_compact(slot : String, character : Character):
+	write(slot + ":")
+	var item : Dictionary = {}
+	if character.equipment.has(slot):
+		item = get_item(character.equipment[slot])
+	elif character.has_natural_equipment_slot(slot):
+		item = character.natural_equipment_slot(slot)
+	if item != {}:
+		if item.has("DEF"):
+			var def = roundi(item["DEF"])
+			write(" ")
+			write(("+" if def >= 0 else "") + str(def), "Red" if def < 0 else ("Green" if def > 0 else "Gray"))
+			write(" ")
+			var dices = roundi(item["PRT_dices"])
+			var sides = roundi(item["PRT_sides"])
+			write(str(dices) + "d" + str(sides))
+		else:
+			write("       ", "Gray")
+		if item.has("ATT"):
+			var att = roundi(item["ATT"] + globals.savegame.player.get_skill("ATT"))
+			set_cursor_x(29)
+			write(("+" if att >= 0 else "") + str(att), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
+			write(" ")
+			var dices = roundi(item["DMG_dices"])
+			var sides = roundi(item["DMG_sides"] + globals.savegame.player.get_attribute("STR"))
+			write(str(dices) + "d" + str(sides))
+			write((" +" + str(roundi(-item["IN_cost"])) if item["IN_cost"] < 0 else " -" + str(roundi(item["IN_cost"]))), "Red" if item["IN_cost"] > 0 else ("Green" if item["IN_cost"] < 0 else "Gray"))
+			write(" " + str(dices) + "-" + str(dices * (sides + int(globals.savegame.player.get_attribute("STR")))))
+	else: globals.write("")
 # Prints an accessory slot
 func print_accessory(slot : int, character : Character):
 	write("ACC: ")
@@ -539,6 +582,13 @@ func print_accessory(slot : int, character : Character):
 	if globals.savegame.player.accessories.size() > slot:
 		globals.write(globals.savegame.player.accessories[slot])
 	else: globals.write("-")
+# Prints an accessory slot in a compact way
+func print_accessory_compact(slot : int, character : Character):
+	write("ACC: ")
+	if globals.savegame.player.accessories.size() > slot:
+		write(globals.savegame.player.accessories[slot])
+	else:
+		write("")
 # Prints an accessory slot
 func print_accessory_raw(slot : int, race, background):
 	write("ACC: ")
@@ -547,60 +597,106 @@ func print_accessory_raw(slot : int, race, background):
 		write(item["name"])
 	else:
 		write("")
-func print_stats(character, rounded : bool = true):
+func print_stats(character):
 	set_cursor_xy(0, 15)
 	write("-".repeat(80))
-	set_cursor_x(1)
-	modify_cursor_y(1)
-	write("Attributes")
-	set_cursor_x(0)
-	modify_cursor_y(1)
-	write("-".repeat(80))
-	set_cursor_x(1)
-	modify_cursor_y(1)
-	print_attribute("SIZ", character, rounded)
-	set_cursor_x(1)
-	modify_cursor_y(1)
-	print_attribute("VIT", character, rounded)
-	set_cursor_x(1)
-	modify_cursor_y(1)
-	print_attribute("STR", character, rounded)
-	set_cursor_x(1)
-	modify_cursor_y(1)
-	print_attribute("SPE", character, rounded)
-	set_cursor_xy(17, 16)
-	write("Body Skills")
-	set_cursor_x(17)
-	modify_cursor_y(2)
-	print_skill("ATT", character, rounded)
-	set_cursor_x(17)
-	modify_cursor_y(1)
-	print_skill("DEF", character, rounded)
-	set_cursor_x(17)
-	modify_cursor_y(1)
-	print_skill("PRE", character, rounded)
-	set_cursor_xy(33, 16)
-	write("Mind Skills")
-	set_cursor_x(33)
-	modify_cursor_y(2)
-	print_skill("CHA", character, rounded)
-	set_cursor_x(33)
-	modify_cursor_y(1)
-	print_skill("NAT", character, rounded)
-	set_cursor_x(33)
-	modify_cursor_y(1)
-	print_skill("SOR", character, rounded)
-	set_cursor_xy(49, 16)
-	write("Soul Skills")
-	set_cursor_x(49)
-	modify_cursor_y(2)
-	print_skill("LIF", character, rounded)
-	set_cursor_x(49)
-	modify_cursor_y(1)
-	print_skill("DEA", character, rounded)
-	set_cursor_x(49)
-	modify_cursor_y(1)
-	print_skill("BLO", character, rounded)
+	if not tab_swap:
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		write("Attributes")
+		set_cursor_x(0)
+		modify_cursor_y(1)
+		write("-".repeat(80))
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		print_attribute("SIZ", character)
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		print_attribute("VIT", character)
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		print_attribute("STR", character)
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		print_attribute("SPE", character)
+		set_cursor_xy(17, 16)
+		write("Body Skills")
+		set_cursor_x(17)
+		modify_cursor_y(2)
+		print_skill("ATT", character)
+		set_cursor_x(17)
+		modify_cursor_y(1)
+		print_skill("DEF", character)
+		set_cursor_x(17)
+		modify_cursor_y(1)
+		print_skill("PRE", character)
+		set_cursor_xy(33, 16)
+		write("Mind Skills")
+		set_cursor_x(33)
+		modify_cursor_y(2)
+		print_skill("CHA", character)
+		set_cursor_x(33)
+		modify_cursor_y(1)
+		print_skill("NAT", character)
+		set_cursor_x(33)
+		modify_cursor_y(1)
+		print_skill("SOR", character)
+		set_cursor_xy(49, 16)
+		write("Soul Skills")
+		set_cursor_x(49)
+		modify_cursor_y(2)
+		print_skill("LIF", character)
+		set_cursor_x(49)
+		modify_cursor_y(1)
+		print_skill("DEA", character)
+		set_cursor_x(49)
+		modify_cursor_y(1)
+		print_skill("BLO", character)
+	elif tab_swap:
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		write("Armor")
+		modify_cursor_x(1)
+		write("D PRT", "DimGray")
+		set_cursor_x(0)
+		modify_cursor_y(1)
+		write("-".repeat(80))
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		print_slot_compact("HEA", character)
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		print_slot_compact("CHE", character)
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		print_slot_compact("HAN", character)
+		set_cursor_x(1)
+		modify_cursor_y(1)
+		print_slot_compact("LEG", character)
+		set_cursor_xy(17, 16)
+		write("Arms")
+		modify_cursor_x(2)
+		write("D PRT  A DMG IN OUTPUT", "DimGray")
+		set_cursor_x(17)
+		modify_cursor_y(2)
+		print_slot_compact("MAI", character)
+		set_cursor_x(17)
+		modify_cursor_y(1)
+		print_slot_compact("OFF",character)
+		set_cursor_x(17)
+		modify_cursor_y(1)
+		print_slot_compact("RAN", character)
+		set_cursor_xy(49, 16)
+		write("Accessories")
+		set_cursor_x(49)
+		modify_cursor_y(2)
+		print_accessory_compact(0, character)
+		set_cursor_x(49)
+		modify_cursor_y(1)
+		print_accessory_compact(1, character)
+		set_cursor_x(49)
+		modify_cursor_y(1)
+		print_accessory_compact(2, character)
 func print_stats_raw(race, background, just_first_page : bool = true, rounded : bool = true):
 	set_cursor_xy(0, 15)
 	write("-".repeat(80))
@@ -613,49 +709,49 @@ func print_stats_raw(race, background, just_first_page : bool = true, rounded : 
 		write("-".repeat(80))
 		set_cursor_x(1)
 		modify_cursor_y(1)
-		print_attribute_raw("SIZ", race, background, rounded)
+		print_attribute_raw("SIZ", race, background)
 		set_cursor_x(1)
 		modify_cursor_y(1)
-		print_attribute_raw("VIT", race, background, rounded)
+		print_attribute_raw("VIT", race, background)
 		set_cursor_x(1)
 		modify_cursor_y(1)
-		print_attribute_raw("STR", race, background, rounded)
+		print_attribute_raw("STR", race, background)
 		set_cursor_x(1)
 		modify_cursor_y(1)
-		print_attribute_raw("SPE", race, background, rounded)
+		print_attribute_raw("SPE", race, background)
 		set_cursor_xy(17, 16)
 		write("Body Skills")
 		set_cursor_x(17)
 		modify_cursor_y(2)
-		print_skill_raw("ATT", race, background, rounded)
+		print_skill_raw("ATT", race, background)
 		set_cursor_x(17)
 		modify_cursor_y(1)
-		print_skill_raw("DEF", race, background, rounded)
+		print_skill_raw("DEF", race, background)
 		set_cursor_x(17)
 		modify_cursor_y(1)
-		print_skill_raw("PRE", race, background, rounded)
+		print_skill_raw("PRE", race, background)
 		set_cursor_xy(33, 16)
 		write("Mind Skills")
 		set_cursor_x(33)
 		modify_cursor_y(2)
-		print_skill_raw("CHA", race, background, rounded)
+		print_skill_raw("CHA", race, background)
 		set_cursor_x(33)
 		modify_cursor_y(1)
-		print_skill_raw("NAT", race, background, rounded)
+		print_skill_raw("NAT", race, background)
 		set_cursor_x(33)
 		modify_cursor_y(1)
-		print_skill_raw("SOR", race, background, rounded)
+		print_skill_raw("SOR", race, background)
 		set_cursor_xy(49, 16)
 		write("Soul Skills")
 		set_cursor_x(49)
 		modify_cursor_y(2)
-		print_skill_raw("LIF", race, background, rounded)
+		print_skill_raw("LIF", race, background)
 		set_cursor_x(49)
 		modify_cursor_y(1)
-		print_skill_raw("DEA", race, background, rounded)
+		print_skill_raw("DEA", race, background)
 		set_cursor_x(49)
 		modify_cursor_y(1)
-		print_skill_raw("BLO", race, background, rounded)
+		print_skill_raw("BLO", race, background)
 	elif tab_swap:
 		set_cursor_x(1)
 		modify_cursor_y(1)
@@ -680,7 +776,7 @@ func print_stats_raw(race, background, just_first_page : bool = true, rounded : 
 		set_cursor_xy(17, 16)
 		write("Arms")
 		modify_cursor_x(2)
-		write("D PRT  A DMG", "DimGray")
+		write("D PRT  A DMG IN OUTPUT", "DimGray")
 		set_cursor_x(17)
 		modify_cursor_y(2)
 		print_slot_raw("MAI", race, background)
@@ -702,8 +798,8 @@ func print_stats_raw(race, background, just_first_page : bool = true, rounded : 
 		modify_cursor_y(1)
 		print_accessory_raw(2, race, background)
 	if not just_first_page:
-		set_cursor_xy(65, 16)
-		write("TAB 2/2" if tab_swap else "TAB 1/2", "White")
+		set_cursor_xy(76, 16)
+		write("TAB", "White")
 #endregion
 
 #region scene_management
@@ -734,7 +830,7 @@ func draw_scene():
 	current_scene.draw_scene()
 	# Hookup to the most top-left selectable that is available
 	# in the scene if the selection is out of bounds
-	if selection == Vector2i(-1, -1) && selectables.size() > 0 && !current_scene_name.contains("event"):
+	if selection == Vector2i(-1, -1) && selectables.size() > 0 && !current_scene_name.contains("event") && !current_scene_name.contains("scene_game_combat_b"):
 		var temp = selectables
 		temp.sort_custom(func(a, b): return a[0] < b[0])
 		selection = temp[0][0]

@@ -70,7 +70,6 @@ static func create(name, sex, race, background) -> Savegame:
 				while not done:
 					var site_rand_pos = int((overall_amount_of_tiles - 1) / 100.0 * globals.rand.randi_range(site["min_%"], site["max_%"]))
 					if not new.areas[area_name]["tiles"][site_rand_pos].has("site"):
-						print_debug("overall: " + str(overall_amount_of_tiles) + " dropped " + site["name"] + " at " + str(site_rand_pos))
 						new.areas[area_name]["tiles"][site_rand_pos]["site"] = {}
 						new.areas[area_name]["tiles"][site_rand_pos]["site"]["name"] = site["name"]
 						new.areas[area_name]["tiles"][site_rand_pos]["site"]["logo"] = site["logo"]

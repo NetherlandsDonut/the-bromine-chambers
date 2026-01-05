@@ -32,8 +32,8 @@ static func draw_scene():
 		globals.write(background["name"])
 	globals.set_cursor_xy(33, 2)
 	globals.write("Description")
-	globals.set_cursor_x(65)
-	globals.write("TAB 2/2" if globals.tab_swap else "TAB 1/2", "White")
+	globals.set_cursor_x(76)
+	globals.write("TAB", "White")
 	globals.modify_cursor_y(1)
 	if globals.character_creation_background != {}:
 		for line in (globals.character_creation_background["equipment_description"] if globals.tab_swap else globals.character_creation_background["description"]):

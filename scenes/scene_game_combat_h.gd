@@ -58,13 +58,8 @@ static func draw_bars_right(character : Character):
 
 # Draws the scene
 static func draw_scene():
-	globals.set_return_action(func():
-		globals.set_scene("scene_game_a", true)
-	)
 	globals.set_cursor_x(1)
 	globals.write("Combat in the " + globals.savegame.current_area + ", Round " + str(globals.combat.round))
-	globals.set_cursor_x(76)
-	globals.write("TAB", "White")
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))
@@ -89,8 +84,6 @@ static func draw_scene():
 	globals.write("-".repeat(80))
 	globals.set_cursor_xy(0, 14)
 	globals.write("-".repeat(80))
-	globals.set_cursor_xy(0, 16)
-	globals.write("-".repeat(80))
 	globals.set_cursor_xy(1, 13)
 	globals.write("Current:")
 	globals.set_cursor_x(17)
@@ -109,60 +102,23 @@ static func draw_scene():
 	var plus = globals.combat_current.overall_hit_points() - globals.combat_current.hit_points
 	globals.write(str(globals.combat_current.hit_points) + "/" + str(globals.combat_current.max_hit_points()))
 	if plus > 0: globals.write(" +" + str(plus), "Gray")
-	globals.set_cursor_xy(49, 15)
-	globals.write("Other actions:")
-	globals.set_cursor_x(1)
-	globals.write("Initiative actions:")
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(2)
-	globals.write_selectable(func():
-		globals.set_scene("scene_game_combat_d")
-	)
-	globals.write("Attack")
+	globals.write(globals.combat_current.get_name(true).replace("the ", "The ") + " is considering " + ("his" if globals.combat_current.sex == "Male" else ("her" if globals.combat_current.sex == "Female" else "their")) + " options...", "Yellow")
+	globals.set_cursor_x(0)
+	globals.modify_cursor_y(1)
+	globals.write("-".repeat(80))
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(1)
 	globals.write_selectable(func():
-		globals.combat_action = "Defend"
-		globals.set_scene("scene_game_combat_a")
+		if globals.combat.round > 1 && globals.combat_current.get_melee_weapon().has("ATT"):
+			globals.combat_action = "Melee"
+		elif globals.combat_current.get_ranged_weapon().has("ATT"):
+			globals.combat_action = "Range"
+		else:
+			globals.combat_action = "Do nothing"
+		var alive_targets =  globals.combat.friends.filter(func(n): return not n.dead)
+		globals.combat_target = alive_targets[randi_range(0, alive_targets.size() - 1)]
+		globals.set_scene("scene_game_combat_g")
 	)
-	globals.write("Defend")
-	globals.set_cursor_x(1)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.combat_action = "Power"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Use a power")
-	globals.set_cursor_xy(17, 17)
-	globals.write_selectable(func():
-		globals.combat_action = "Item"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Use an item")
-	globals.set_cursor_x(17)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.combat_action = "Equipment"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Swap an equipment piece")
-	globals.set_cursor_x(17)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.set_scene("scene_game_combat_c")
-	)
-	globals.write("Flee from combat")
-	globals.set_cursor_x(17)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.combat_current.initiative -= 1
-		globals.combat.log.append(globals.combat_current.get_name() + " did nothing of value.")
-		globals.combat.roll_current_character()
-	)
-	globals.write("Do nothing")
-	globals.set_cursor_xy(49, 17)
-	globals.write_selectable(func():
-		globals.combat_action = "Inspect"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Inspect characters")
+	globals.write("Ok")

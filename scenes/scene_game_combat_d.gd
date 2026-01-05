@@ -55,16 +55,14 @@ static func draw_bars_right(character : Character):
 	globals.set_cursor_x(x - bar_size - 5)
 	globals.write("▀".repeat(healthy_bar_size), "Green" if character.wounds == 0 else ("Yellow" if character.wounds == 1 else "Red"))
 	globals.write("▀".repeat(bar_size - healthy_bar_size), "DimGray")
-
+	
 # Draws the scene
 static func draw_scene():
 	globals.set_return_action(func():
-		globals.set_scene("scene_game_a", true)
+		globals.set_scene("scene_game_combat_b", true)
 	)
 	globals.set_cursor_x(1)
 	globals.write("Combat in the " + globals.savegame.current_area + ", Round " + str(globals.combat.round))
-	globals.set_cursor_x(76)
-	globals.write("TAB", "White")
 	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
 	globals.write("-".repeat(80))
@@ -109,60 +107,62 @@ static func draw_scene():
 	var plus = globals.combat_current.overall_hit_points() - globals.combat_current.hit_points
 	globals.write(str(globals.combat_current.hit_points) + "/" + str(globals.combat_current.max_hit_points()))
 	if plus > 0: globals.write(" +" + str(plus), "Gray")
-	globals.set_cursor_xy(49, 15)
-	globals.write("Other actions:")
-	globals.set_cursor_x(1)
-	globals.write("Initiative actions:")
+	globals.set_cursor_xy(1, 15)
+	globals.write("Available attacks:")
+	globals.set_cursor_x(33)
+	globals.write("A DMG IN OUTPUT", "DimGray")
 	globals.set_cursor_x(1)
 	globals.modify_cursor_y(2)
-	globals.write_selectable(func():
-		globals.set_scene("scene_game_combat_d")
-	)
-	globals.write("Attack")
-	globals.set_cursor_x(1)
+	var which_selected = ""
+	var item = globals.combat_current.get_melee_weapon()
+	if item.has("ATT"):
+		globals.set_cursor_x(32)
+		var att = item["ATT"]
+		globals.write(("+" if att >= 0 else "") + str(roundi(att)), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
+		globals.write(" ")
+		var dices = roundi(item["DMG_dices"])
+		var sides = roundi(item["DMG_sides"])
+		globals.write(str(dices) + "d" + str(sides))
+		globals.write((" +" + str(roundi(-item["IN_cost"])) if item["IN_cost"] < 0 else " -" + str(roundi(item["IN_cost"]))), "Red" if item["IN_cost"] > 0 else ("Green" if item["IN_cost"] < 0 else "Gray"))
+		var min_dmg = dices
+		var max_dmg = dices * (sides + int(globals.savegame.player.get_attribute("STR")))
+		globals.write(" " + str(min_dmg) + ("-" + str(max_dmg) if min_dmg != max_dmg else ""))
+		globals.set_cursor_x(1)
+		globals.write_selectable(func():
+			if globals.combat.round > 1:
+				globals.combat_action = "Melee"
+				globals.set_scene("scene_game_combat_e")
+		)
+		if globals.last_write_selectable_active:
+			which_selected = "Melee"
+		globals.write(item["name"])
+	item = globals.combat_current.get_ranged_weapon()
+	if item.has("ATT"):
+		globals.modify_cursor_y(1)
+		globals.set_cursor_x(32)
+		if item.has("ATT"):
+			var att = item["ATT"]
+			globals.write(("+" if att >= 0 else "") + str(roundi(att)), "Red" if att < 0 else ("Green" if att > 0 else "Gray"))
+			globals.write(" ")
+			var dices = roundi(item["DMG_dices"])
+			var sides = roundi(item["DMG_sides"])
+			globals.write(str(dices) + "d" + str(sides))
+			globals.write((" +" + str(roundi(-item["IN_cost"])) if item["IN_cost"] < 0 else " -" + str(roundi(item["IN_cost"]))), "Red" if item["IN_cost"] > 0 else ("Green" if item["IN_cost"] < 0 else "Gray"))
+			var min_dmg = dices
+			var max_dmg = dices * (sides + int(globals.savegame.player.get_attribute("STR")))
+			globals.write(" " + str(min_dmg) + ("-" + str(max_dmg) if min_dmg != max_dmg else ""))
+		globals.set_cursor_x(1)
+		globals.write_selectable(func():
+			globals.combat_action = "Range"
+			globals.set_scene("scene_game_combat_e")
+		)
+		if globals.last_write_selectable_active:
+			which_selected = "Range"
+		globals.write(item["name"])
+	globals.set_cursor_x(0)
 	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.combat_action = "Defend"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Defend")
-	globals.set_cursor_x(1)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.combat_action = "Power"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Use a power")
-	globals.set_cursor_xy(17, 17)
-	globals.write_selectable(func():
-		globals.combat_action = "Item"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Use an item")
-	globals.set_cursor_x(17)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.combat_action = "Equipment"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Swap an equipment piece")
-	globals.set_cursor_x(17)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.set_scene("scene_game_combat_c")
-	)
-	globals.write("Flee from combat")
-	globals.set_cursor_x(17)
-	globals.modify_cursor_y(1)
-	globals.write_selectable(func():
-		globals.combat_current.initiative -= 1
-		globals.combat.log.append(globals.combat_current.get_name() + " did nothing of value.")
-		globals.combat.roll_current_character()
-	)
-	globals.write("Do nothing")
-	globals.set_cursor_xy(49, 17)
-	globals.write_selectable(func():
-		globals.combat_action = "Inspect"
-		globals.set_scene("scene_game_combat_a")
-	)
-	globals.write("Inspect characters")
+	globals.write("-".repeat(80))
+	if which_selected == "Melee" && globals.combat.round == 1:
+		globals.set_cursor_x(1)
+		globals.modify_cursor_y(1)
+		globals.write("Cannot attack melee in the first round of combat.", "Red")

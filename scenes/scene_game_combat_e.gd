@@ -18,7 +18,24 @@ static func draw_bars_left(character : Character):
 	globals.write("]")
 	globals.modify_cursor_x(1)
 	globals.write_selectable(func():
-		globals.set_scene("scene_game_combat_a", true)
+		if globals.combat.friends.has(globals.combat_target) != globals.combat.friends.has(globals.combat_current):
+			if globals.combat_action == "Melee":
+				var weapon = globals.combat_current.get_melee_weapon()
+				if weapon.has("IN_cost"): globals.combat_current.initiative -= weapon["IN_cost"]
+				var melee_roll = globals.combat_current.roll_melee_damage()
+				if globals.roll(roundi(globals.defines["success_table"][str(roundi(globals.combat_target.get_skill("DEF") - globals.combat_current.get_skill("ATT") - (weapon["ATT"] if weapon.has("ATT") else 0)))])):
+					globals.combat.damage(globals.combat_current, globals.combat_target, melee_roll, true)
+				else:
+					globals.combat.log.append(globals.combat_current.get_name() + " missed " + globals.combat_target.get_name() + ".")
+			elif globals.combat_action == "Range":
+				var weapon = globals.combat_current.get_ranged_weapon()
+				if weapon.has("IN_cost"): globals.combat_current.initiative -= weapon["IN_cost"]
+				var range_roll = globals.combat_current.roll_range_damage()
+				if globals.roll(roundi(globals.defines["success_table"][str(roundi(globals.combat_target.get_skill("DEF") - globals.combat_current.get_skill("ATT") - (weapon["ATT"] if weapon.has("ATT") else 0)))])):
+					globals.combat.damage(globals.combat_current, globals.combat_target, range_roll, true)
+				else:
+					globals.combat.log.append(globals.combat_current.get_name() + " missed " + globals.combat_target.get_name() + ".")
+			globals.combat.roll_current_character()
 	)
 	var this_one_selected = false
 	if globals.last_write_selectable_active:
@@ -36,14 +53,31 @@ static func draw_bars_left(character : Character):
 	var healthy_bar_size = ceili(bar_size / 100.0 * health_percent)
 	globals.write("▀".repeat(healthy_bar_size), "Green" if character.wounds == 0 else ("Yellow" if character.wounds == 1 else "Red"))
 	globals.write("▀".repeat(bar_size - healthy_bar_size), "DimGray")
-
+	
 # Draws the scene
 static func draw_bars_right(character : Character):
 	var title = character.get_name()
 	var x = globals.cursor.y
 	globals.set_cursor_x(x - 6)
 	globals.write_selectable(func():
-		globals.set_scene("scene_game_combat_a", true)
+		if globals.combat.friends.has(globals.combat_target) != globals.combat.friends.has(globals.combat_current):
+			if globals.combat_action == "Melee":
+				var weapon = globals.combat_current.get_melee_weapon()
+				if weapon.has("IN_cost"): globals.combat_current.initiative -= weapon["IN_cost"]
+				var melee_roll = globals.combat_current.roll_melee_damage()
+				if globals.roll(roundi(globals.defines["success_table"][str(roundi(globals.combat_target.get_skill("DEF") - globals.combat_current.get_skill("ATT") - (weapon["ATT"] if weapon.has("ATT") else 0)))])):
+					globals.combat.damage(globals.combat_current, globals.combat_target, melee_roll, true)
+				else:
+					globals.combat.log.append(globals.combat_current.get_name() + " missed " + globals.combat_target.get_name(true) + ".")
+			elif globals.combat_action == "Range":
+				var weapon = globals.combat_current.get_ranged_weapon()
+				if weapon.has("IN_cost"): globals.combat_current.initiative -= weapon["IN_cost"]
+				var range_roll = globals.combat_current.roll_range_damage()
+				if globals.roll(roundi(globals.defines["success_table"][str(roundi(globals.combat_target.get_skill("DEF") - globals.combat_current.get_skill("ATT") - (weapon["ATT"] if weapon.has("ATT") else 0)))])):
+					globals.combat.damage(globals.combat_current, globals.combat_target, range_roll, true)
+				else:
+					globals.combat.log.append(globals.combat_current.get_name() + " missed " + globals.combat_target.get_name(true) + ".")
+			globals.combat.roll_current_character()
 	)
 	var this_one_selected = false
 	if globals.last_write_selectable_active:
@@ -72,7 +106,7 @@ static func draw_bars_right(character : Character):
 	globals.write("▀".repeat(healthy_bar_size), "Green" if character.wounds == 0 else ("Yellow" if character.wounds == 1 else "Red"))
 	globals.write("▀".repeat(bar_size - healthy_bar_size), "DimGray")
 
-# Draws the scene
+# Draws the scene 
 static func draw_scene():
 	globals.set_return_action(func():
 		globals.set_scene("scene_game_combat_b", true)
@@ -119,10 +153,12 @@ static func draw_scene():
 	var plus = globals.combat_current.overall_hit_points() - globals.combat_current.hit_points
 	globals.write(str(globals.combat_current.hit_points) + "/" + str(globals.combat_current.max_hit_points()))
 	if plus > 0: globals.write(" +" + str(plus), "Gray")
+	globals.set_cursor_xy(0, 15)
+	globals.write("-".repeat(80))
 	if globals.combat_target != null:
 		globals.set_cursor_xy(1, 14)
 		globals.write("Target:")
-		globals.set_cursor_x(17)
+		globals.set_cursor_xy(17, 14)
 		if globals.combat_current == globals.combat_target:
 			globals.write("-")
 		else:
@@ -141,6 +177,40 @@ static func draw_scene():
 			plus = globals.combat_target.overall_hit_points() - globals.combat_target.hit_points
 			globals.write(str(globals.combat_target.hit_points) + "/" + str(globals.combat_target.max_hit_points()))
 			if plus > 0: globals.write(" +" + str(plus), "Gray")
-		globals.set_cursor_x(76)
-		globals.write("TAB", "White")
-		globals.print_stats(globals.combat_target)
+		var weapon_used = globals.combat_current.get_melee_weapon() if globals.combat_action == "Melee" else globals.combat_current.get_ranged_weapon()
+		globals.set_cursor_x(1)
+		globals.modify_cursor_y(2)
+		globals.write("Raw damage:")
+		globals.set_cursor_x(17)
+		var dices = roundi(weapon_used["DMG_dices"])
+		var sides = roundi(weapon_used["DMG_sides"])
+		var min_dmg = dices
+		var max_dmg = dices * (sides + int(globals.combat_current.get_attribute("STR")))
+		globals.write(str(min_dmg) + ("-" + str(max_dmg) if min_dmg != max_dmg else ""))
+		globals.set_cursor_x(1)
+		globals.modify_cursor_y(1)
+		globals.write("Chance to hit:")
+		globals.set_cursor_x(17)
+		globals.write(str(roundi(globals.defines["success_table"][str(globals.combat_target.get_skill("DEF") - globals.combat_current.get_skill("ATT"))])) + "%")
+		globals.set_cursor_x(33)
+		globals.modify_cursor_y(-1)
+		var protection = globals.combat_target.protection_values()
+		globals.write("Final damage:")
+		globals.set_cursor_x(49)
+		min_dmg = dices - protection.y
+		max_dmg = dices * (sides + int(globals.combat_current.get_attribute("STR"))) - protection.x
+		globals.write(str(min_dmg) + ("-" + str(max_dmg) if min_dmg != max_dmg else ""))
+		globals.set_cursor_x(33)
+		globals.modify_cursor_y(1)
+		globals.write("Protection:")
+		globals.set_cursor_x(49)
+		globals.write(str(protection.x) + ("-" + str(protection.y) if protection.x != protection.y else ""))
+		globals.set_cursor_x(0)
+		globals.modify_cursor_y(1)
+		globals.write("-".repeat(80))
+		globals.set_cursor_x(1)
+		globals.modify_cursor_y(1)
+		if globals.combat_target == globals.combat_current:
+			globals.write("Cannot attack yourself.", "Red")
+		elif globals.combat.friends.has(globals.combat_target) == globals.combat.friends.has(globals.combat_current):
+			globals.write("Cannot attack an ally.", "Red")
